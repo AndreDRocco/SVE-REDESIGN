@@ -1,0 +1,36 @@
+@use '../../styles/mixins';
+
+.section {
+  position: relative;
+  background: linear-gradient(160deg, var(--color-forest-deep), var(--color-moss-dark));
+  padding-block: clamp(5rem, 12vw, 9rem);
+  text-align: center;
+  @include mixins.section-padding;
+}
+
+.heading {
+  @include mixins.display-heading;
+  font-size: clamp(2.25rem, 6vw, 4.5rem);
+  max-width: 20ch;
+  margin-inline: auto;
+}
+
+.subheading {
+  margin: 1.25rem auto 2.5rem;
+  max-width: 42ch;
+  color: var(--color-mist-dim);
+}
+
+.cta {
+  display: inline-block;
+  border-radius: 999px;
+  background: var(--color-sunset);
+  color: var(--color-forest-deep);
+  font-weight: 700;
+  padding: 1rem 2.5rem;
+  transition: transform 0.3s var(--ease-trilho);
+
+  &:hover {
+    transform: scale(1.05);
+  }
+}

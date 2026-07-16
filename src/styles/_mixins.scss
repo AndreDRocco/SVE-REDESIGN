@@ -1,0 +1,16 @@
+@mixin reduced-motion-static {
+  @media (prefers-reduced-motion: reduce) {
+    @content;
+  }
+}
+
+@mixin section-padding {
+  padding-inline: clamp(1.25rem, 5vw, 6rem);
+}
+
+@mixin display-heading {
+  font-family: var(--font-display);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 0.95;
+}

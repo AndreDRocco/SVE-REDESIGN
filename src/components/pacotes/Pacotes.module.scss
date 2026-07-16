@@ -1,0 +1,123 @@
+@use '../../styles/mixins';
+
+.section {
+  background: var(--color-forest);
+  padding-block: clamp(4rem, 10vw, 8rem);
+  @include mixins.section-padding;
+}
+
+.heading {
+  @include mixins.display-heading;
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  max-width: 22ch;
+  margin-bottom: clamp(2rem, 6vw, 4rem);
+}
+
+.grid {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+
+.card {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid rgba(243, 239, 228, 0.12);
+  background: var(--color-forest-light);
+  display: flex;
+  flex-direction: column;
+}
+
+.preview {
+  height: 140px;
+}
+
+.gradient-moss {
+  background: linear-gradient(135deg, var(--color-moss), var(--color-forest));
+}
+.gradient-forest {
+  background: linear-gradient(135deg, var(--color-forest-light), var(--color-forest-deep));
+}
+.gradient-gold {
+  background: linear-gradient(135deg, var(--color-gold), var(--color-sunset-dark));
+}
+.gradient-sunset {
+  background: linear-gradient(135deg, var(--color-sunset-light), var(--color-sunset-dark));
+}
+
+.body {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+.badgeRow {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.badge {
+  font-size: 0.7rem;
+  border-radius: 999px;
+  border: 1px solid rgba(243, 239, 228, 0.25);
+  padding: 0.15rem 0.55rem;
+  color: var(--color-mist-dim);
+}
+
+.destaqueBadge {
+  font-size: 0.7rem;
+  border-radius: 999px;
+  background: var(--color-gold);
+  color: var(--color-forest-deep);
+  padding: 0.15rem 0.55rem;
+  font-weight: 600;
+}
+
+.name {
+  @include mixins.display-heading;
+  font-size: 1.1rem;
+  line-height: 1.2;
+}
+
+.location {
+  font-size: 0.8rem;
+  color: var(--color-mist-dim);
+}
+
+.footer {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 0.75rem;
+}
+
+.price {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--color-gold);
+}
+
+.priceLabel {
+  font-size: 0.7rem;
+  display: block;
+  color: var(--color-mist-dim);
+  font-weight: 400;
+}
+
+.cta {
+  font-size: 0.8rem;
+  border-radius: 999px;
+  border: 1px solid var(--color-mist-dim);
+  padding: 0.4rem 0.9rem;
+  transition: all 0.3s var(--ease-trilho);
+
+  &:hover {
+    border-color: var(--color-gold);
+    color: var(--color-gold);
+  }
+}

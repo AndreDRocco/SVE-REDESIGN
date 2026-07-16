@@ -1,0 +1,105 @@
+@use '../../styles/mixins';
+
+.section {
+  position: relative;
+  background: var(--color-forest-deep);
+  padding-block: clamp(4rem, 10vw, 8rem);
+  @include mixins.section-padding;
+}
+
+.heading {
+  @include mixins.display-heading;
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  max-width: 20ch;
+  margin-bottom: clamp(2rem, 6vw, 4rem);
+}
+
+.frameOuter {
+  position: relative;
+  margin-inline: auto;
+  max-width: 960px;
+  border: 14px solid var(--color-moss-dark);
+  border-radius: 18px;
+  box-shadow:
+    inset 0 0 0 3px rgba(212, 162, 76, 0.35),
+    0 30px 60px rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+}
+
+.viewport {
+  position: relative;
+  height: 70vh;
+  min-height: 420px;
+}
+
+// Modo padrão (sem JS ou reduced-motion): cenas empilhadas normalmente no fluxo.
+.scenesStatic {
+  display: block;
+  height: auto;
+
+  .scene {
+    position: relative;
+    height: 60vh;
+    min-height: 360px;
+    opacity: 1;
+    margin-bottom: 2px;
+  }
+}
+
+// Modo pinado (JS + sem reduced-motion): cenas absolutas, cross-fade via GSAP.
+.pinnedMode {
+  .scene {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+  }
+}
+
+.scene {
+  display: flex;
+  align-items: flex-end;
+  padding: 2rem;
+}
+
+.sceneRio {
+  background: linear-gradient(180deg, var(--color-moss) 0%, var(--color-forest) 100%);
+}
+.sceneCachoeira {
+  background: linear-gradient(180deg, var(--color-moss-light) 0%, var(--color-moss-dark) 100%);
+}
+.sceneFloresta {
+  background: linear-gradient(180deg, var(--color-forest-light) 0%, var(--color-forest-deep) 100%);
+}
+.sceneViaduto {
+  background: linear-gradient(180deg, var(--color-mist-dim) 0%, var(--color-moss-dark) 100%);
+}
+.sceneVilarejo {
+  background: linear-gradient(180deg, var(--color-sunset-light) 0%, var(--color-sunset-dark) 100%);
+}
+
+.sceneCaption {
+  @include mixins.display-heading;
+  font-size: clamp(1.25rem, 2.5vw, 1.75rem);
+  color: var(--color-forest-deep);
+  background: rgba(243, 239, 228, 0.85);
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+}
+
+.controls {
+  position: absolute;
+  right: 1.5rem;
+  bottom: 1.5rem;
+  z-index: 5;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.muteButton {
+  border-radius: 999px;
+  border: 1px solid rgba(243, 239, 228, 0.4);
+  background: rgba(8, 20, 16, 0.6);
+  color: var(--color-mist);
+  padding: 0.5rem 1rem;
+  font-size: 0.75rem;
+}

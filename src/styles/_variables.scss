@@ -1,0 +1,25 @@
+// Tokens espelham tailwind.config.ts — usar var(--*) em SCSS para não duplicar a fonte da verdade.
+:root {
+  --color-forest: #0e1f17;
+  --color-forest-light: #16301f;
+  --color-forest-deep: #081410;
+  --color-moss: #4e7a5a;
+  --color-moss-light: #7fa989;
+  --color-moss-dark: #324f39;
+  --color-mist: #f3efe4;
+  --color-mist-dim: #d9d3c1;
+  --color-sunset: #d98e52;
+  --color-sunset-light: #f0b27e;
+  --color-sunset-dark: #a9612e;
+  --color-gold: #d4a24c;
+
+  --ease-trilho: cubic-bezier(0.16, 1, 0.3, 1);
+
+  --header-height: 88px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --ease-trilho: linear;
+  }
+}

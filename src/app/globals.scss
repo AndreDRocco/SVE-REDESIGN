@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@use '../styles/variables';
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--color-forest);
+  scroll-behavior: auto; // Lenis assume o controle do scroll suave; ver src/lib/scroll
+}
+
+body {
+  color: var(--color-mist);
+  background: var(--color-forest);
+  overflow-x: hidden;
+}
+
+::selection {
+  background: var(--color-sunset);
+  color: var(--color-forest-deep);
+}
+
+a {
+  color: inherit;
+}
+
+// Estado "sem JS de animação": todo elemento com essa classe volta a um layout
+// estático normal. Componentes de scrollytelling devem aplicar seus estilos de
+// movimento condicionados à ausência dessa classe no <html>.
+.no-motion [data-parallax],
+.no-motion [data-scrollytelling] {
+  transform: none !important;
+  opacity: 1 !important;
+}

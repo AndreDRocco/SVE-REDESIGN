@@ -1,0 +1,46 @@
+@use '../../styles/mixins';
+
+.section {
+  background: var(--color-forest-light);
+  padding-block: clamp(4rem, 10vw, 8rem);
+  @include mixins.section-padding;
+}
+
+.heading {
+  @include mixins.display-heading;
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  margin-bottom: clamp(2rem, 6vw, 4rem);
+}
+
+.list {
+  max-width: 48rem;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.item {
+  border: 1px solid rgba(243, 239, 228, 0.15);
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  background: var(--color-forest);
+
+  &[open] summary {
+    color: var(--color-gold);
+  }
+}
+
+.question {
+  cursor: pointer;
+  font-weight: 600;
+  list-style: none;
+
+  &::-webkit-details-marker {
+    display: none;
+  }
+}
+
+.answer {
+  margin-top: 0.75rem;
+  color: var(--color-mist-dim);
+  font-size: 0.95rem;
+}
