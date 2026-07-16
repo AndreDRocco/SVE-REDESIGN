@@ -1,8 +1,10 @@
+// @use precisa vir antes de qualquer outra regra (exigência do Sass) —
+// inclusive antes das diretivas @tailwind.
+@use '../styles/variables';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-@use '../styles/variables';
 
 * {
   box-sizing: border-box;
@@ -35,4 +37,20 @@ a {
 .no-motion [data-scrollytelling] {
   transform: none !important;
   opacity: 1 !important;
+}
+
+// Placeholders de imagem (trocar por fotos/vídeos reais depois). Globais e sem
+// hash de CSS module de propósito: os nomes vêm como string da camada de dados
+// (imagemPlaceholder) e são usados por mais de um componente.
+.gradient-moss {
+  background: linear-gradient(135deg, var(--color-moss), var(--color-forest));
+}
+.gradient-forest {
+  background: linear-gradient(135deg, var(--color-forest-light), var(--color-forest-deep));
+}
+.gradient-gold {
+  background: linear-gradient(135deg, var(--color-gold), var(--color-sunset-dark));
+}
+.gradient-sunset {
+  background: linear-gradient(135deg, var(--color-sunset-light), var(--color-sunset-dark));
 }

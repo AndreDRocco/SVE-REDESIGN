@@ -30,6 +30,12 @@ export default function JanelaPOV() {
     if (audioRef.current) audioRef.current.muted = muted;
   }, [muted]);
 
+  // Ao trocar do layout estático para o pinado, a altura da seção muda —
+  // o ScrollTrigger precisa remedir tudo depois que o DOM atualiza.
+  useEffect(() => {
+    if (pinned) ScrollTrigger.refresh();
+  }, [pinned]);
+
   useGsapContext(sectionRef, () => {
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (reducedMotion || !viewportRef.current) return;

@@ -14,7 +14,7 @@ export default function Pacotes() {
       <div className={styles.grid}>
         {pacotes.map((pacote) => (
           <article key={pacote.slug} className={styles.card}>
-            <div className={`${styles.preview} ${styles[pacote.imagemPlaceholder]}`} aria-hidden />
+            <div className={`${styles.preview} ${pacote.imagemPlaceholder}`} aria-hidden />
             <div className={styles.body}>
               <div className={styles.badgeRow}>
                 <span className={styles.badge}>{pacote.categoria}</span>

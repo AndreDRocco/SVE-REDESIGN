@@ -39,7 +39,7 @@ export default function SeletorDeVagao() {
               className={`${styles.radio} ${styles.srOnly}`}
             />
             <label htmlFor={`vagao-${vagao.categoria}`} data-cursor="hover" className={styles.card}>
-              <div className={`${styles.preview} ${styles[vagao.imagemPlaceholder]}`} aria-hidden />
+              <div className={`${styles.preview} ${vagao.imagemPlaceholder}`} aria-hidden />
               <p className={styles.name}>{vagao.nome}</p>
               <p className={styles.desc}>{vagao.descricao}</p>
               <div className={styles.badges}>

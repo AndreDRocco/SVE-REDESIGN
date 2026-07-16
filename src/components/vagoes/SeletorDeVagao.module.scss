@@ -58,19 +58,6 @@
   margin-bottom: 1rem;
 }
 
-.gradient-moss {
-  background: linear-gradient(135deg, var(--color-moss), var(--color-forest));
-}
-.gradient-forest {
-  background: linear-gradient(135deg, var(--color-forest-light), var(--color-forest-deep));
-}
-.gradient-gold {
-  background: linear-gradient(135deg, var(--color-gold), var(--color-sunset-dark));
-}
-.gradient-sunset {
-  background: linear-gradient(135deg, var(--color-sunset-light), var(--color-sunset-dark));
-}
-
 .name {
   @include mixins.display-heading;
   font-size: 1.25rem;

@@ -29,7 +29,7 @@ export default function SmoothScrollProvider({ children }: { children: ReactNode
     });
     setLenisInstance(lenis);
 
-    lenis.on('scroll', ScrollTrigger.update);
+    lenis.on('scroll', () => ScrollTrigger.update());
 
     const update = (time: number) => lenis.raf(time * 1000);
     gsap.ticker.add(update);
