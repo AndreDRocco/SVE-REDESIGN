@@ -35,6 +35,14 @@ body {
   color: var(--color-forest-deep);
 }
 
+// Esconde o cursor nativo do sistema só quando o ponto customizado
+// (CustomCursor.tsx) está de fato rodando — mantém o cursor padrão em
+// touch e prefers-reduced-motion, onde ele é o único feedback visual.
+html.has-custom-cursor,
+html.has-custom-cursor * {
+  cursor: none;
+}
+
 a {
   color: inherit;
 }

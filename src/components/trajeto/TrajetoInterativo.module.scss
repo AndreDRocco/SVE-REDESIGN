@@ -203,6 +203,39 @@
   margin-inline: auto;
   color: var(--color-mist);
   text-shadow: 0 2px 24px rgba(8, 20, 16, 0.55);
+  perspective: 400px;
+}
+
+// Cada letra entra com um leve atraso em relação à anterior (efeito de
+// "SplitText" via CSS puro) e reage individualmente ao hover.
+.headingChar {
+  display: inline-block;
+  animation: headingCharIn 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+  transition:
+    transform 0.25s var(--ease-trilho),
+    color 0.25s var(--ease-trilho);
+
+  &:hover {
+    transform: translateY(-6px);
+    color: var(--color-sunset-light);
+  }
+}
+
+@keyframes headingCharIn {
+  from {
+    opacity: 0;
+    transform: translateY(26px) rotateX(-55deg);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) rotateX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .headingChar {
+    animation: none;
+  }
 }
 
 .heroCta {
@@ -282,6 +315,13 @@
   gap: 0.3rem;
   padding: clamp(0.8rem, 1.8vw, 1.1rem);
   text-align: left;
+}
+
+// Tampas de cima/baixo do cubo — fecham a caixa num sólido de 6 faces de
+// verdade. Nunca ficam de frente pra câmera (giro só no eixo Y), então
+// levam só uma textura sutil, sem conteúdo de texto.
+.cubeCap {
+  background: linear-gradient(160deg, rgba(78, 122, 90, 0.5) 0%, rgba(14, 31, 23, 0.96) 100%);
 }
 
 .faceKm {

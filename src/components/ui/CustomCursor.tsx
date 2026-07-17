@@ -16,6 +16,10 @@ export default function CustomCursor() {
     if (isTouch || reducedMotion) return;
 
     setActive(true);
+    // Esconde o cursor nativo do sistema só quando o ponto customizado está
+    // realmente rodando — em touch/reduced-motion o cursor nativo continua
+    // sendo o único feedback visual, então nunca deve sumir nesses casos.
+    document.documentElement.classList.add('has-custom-cursor');
 
     const move = (e: MouseEvent) => {
       if (!dotRef.current) return;
@@ -32,6 +36,7 @@ export default function CustomCursor() {
     return () => {
       window.removeEventListener('mousemove', move);
       window.removeEventListener('mouseover', over);
+      document.documentElement.classList.remove('has-custom-cursor');
     };
   }, []);
 

@@ -12,6 +12,7 @@ import styles from './TrajetoInterativo.module.scss';
 gsap.registerPlugin(ScrollTrigger);
 
 const BOOKING_URL = 'https://serraverdeexpress.com.br/booking';
+const COMPANY_NAME = 'Serra Verde Express';
 // Distância de scroll por perna da viagem. São 5 pernas: 4 de ida
 // (Curitiba → Morretes) + 1 fechando o circuito de volta a Curitiba.
 const SCROLL_PER_LEG = 650;
@@ -272,10 +273,26 @@ export default function TrajetoInterativo() {
           />
         ))}
 
-        {/* Centro do circuito: nome da empresa + CTA. */}
+        {/* Centro do circuito: nome da empresa + CTA. O nome é dividido em
+            letras (mesma ideia do GSAP SplitText da referência) e revelado
+            com um leve atraso entre cada uma — mas em CSS puro: um efeito
+            de entrada nunca deve depender de um motor de JS terminar de
+            "tickar" pra aparecer (a mesma lição do resto da hero). */}
         <div className={styles.centerIntro}>
           <p className={styles.eyebrow}>Curitiba → Morretes · ida e volta</p>
-          <h1 className={styles.heading}>Serra Verde Express</h1>
+          <h1 className={styles.heading} aria-label={COMPANY_NAME}>
+            <span aria-hidden="true">
+              {COMPANY_NAME.split('').map((char, i) => (
+                <span
+                  key={i}
+                  className={styles.headingChar}
+                  style={{ animationDelay: `${0.3 + i * 0.035}s` }}
+                >
+                  {char === ' ' ? ' ' : char}
+                </span>
+              ))}
+            </span>
+          </h1>
           <a href={BOOKING_URL} data-cursor="hover" className={styles.heroCta}>
             Reservar agora
           </a>
@@ -308,6 +325,23 @@ export default function TrajetoInterativo() {
                     </div>
                   );
                 })}
+
+                {/* Tampas de cima/baixo: fecham o cubo num sólido de 6 faces
+                    de verdade (mesma técnica da referência) — sem elas, no
+                    meio do giro dá pra ver o "vão vazio" por dentro, o que
+                    quebra a sensação de objeto 3D sólido. Nunca ficam de
+                    frente pra câmera (o giro é só no eixo Y), então não
+                    precisam de conteúdo, só fecham a caixa. */}
+                <div
+                  aria-hidden
+                  className={`${styles.cubeFace} ${styles.cubeCap}`}
+                  style={{ transform: `rotateX(90deg) translateZ(var(--cube-radius))` }}
+                />
+                <div
+                  aria-hidden
+                  className={`${styles.cubeFace} ${styles.cubeCap}`}
+                  style={{ transform: `rotateX(-90deg) translateZ(var(--cube-radius))` }}
+                />
               </div>
             </div>
           </button>

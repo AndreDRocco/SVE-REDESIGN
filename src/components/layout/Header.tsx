@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { scrollToTarget } from '@/lib/scroll/lenis';
+import styles from './Header.module.scss';
 
 const NAV_ITEMS = [
   { label: 'Trajeto', href: '#top' },
@@ -72,14 +73,13 @@ export default function Header() {
           de "tickar" — se travar (aba em segundo plano, dispositivo lento,
           thread principal ocupado pelo GSAP do trajeto), o menu fica preso
           invisível atrás de um clip-path de 0%, como aconteceu aqui. CSS
-          transition roda no compositor do navegador, sempre chega ao fim. */}
+          transition roda no compositor do navegador, sempre chega ao fim.
+          No mobile é um painel curto (~26% da tela) no topo; a revelação em
+          círculo tela cheia fica só a partir do desktop (ver módulo). */}
       <nav
         id="menu-fullscreen"
         aria-hidden={!open}
-        style={{ clipPath: open ? 'circle(150% at 92% 5%)' : 'circle(0% at 92% 5%)' }}
-        className={`fixed inset-0 z-40 flex flex-col items-start justify-center gap-5 bg-forest-deep px-6 transition-[clip-path] duration-[600ms] ease-trilho md:gap-6 md:px-10 ${
-          open ? '' : 'pointer-events-none'
-        }`}
+        className={`${styles.nav} ${open ? styles.open : ''}`}
       >
         {NAV_ITEMS.map((item) => (
           <a
@@ -88,8 +88,7 @@ export default function Header() {
             data-cursor="hover"
             tabIndex={open ? 0 : -1}
             onClick={handleNavClick(item.href)}
-            className="font-display text-mist transition-colors hover:text-sunset-light"
-            style={{ fontSize: 'clamp(1.75rem, 7vw, 3.75rem)' }}
+            className={`font-display text-mist transition-colors hover:text-sunset-light ${styles.navLink}`}
           >
             {item.label}
           </a>
@@ -98,7 +97,7 @@ export default function Header() {
           href="https://serraverdeexpress.com.br/booking"
           data-cursor="hover"
           tabIndex={open ? 0 : -1}
-          className="mt-4 rounded-full bg-sunset px-7 py-3 font-semibold text-forest-deep"
+          className={`rounded-full bg-sunset px-7 py-3 font-semibold text-forest-deep ${styles.navCta}`}
         >
           Reservar agora
         </a>
