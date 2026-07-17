@@ -38,7 +38,7 @@ export default function Header() {
         <a
           href="https://serraverdeexpress.com.br/booking"
           data-cursor="hover"
-          className="hidden rounded-full border border-mist/30 px-5 py-2 text-sm text-mist transition-colors hover:border-gold hover:text-gold md:inline-block"
+          className="hidden rounded-full border border-mist/30 px-5 py-2 text-sm text-mist transition-colors hover:border-sunset-light hover:text-sunset-light md:inline-block"
         >
           Reservar agora
         </a>
@@ -75,7 +75,7 @@ export default function Header() {
                 href={item.href}
                 data-cursor="hover"
                 onClick={handleNavClick(item.href)}
-                className="font-display text-mist transition-colors hover:text-gold"
+                className="font-display text-mist transition-colors hover:text-sunset-light"
                 style={{ fontSize: 'clamp(1.75rem, 7vw, 3.75rem)' }}
               >
                 {item.label}

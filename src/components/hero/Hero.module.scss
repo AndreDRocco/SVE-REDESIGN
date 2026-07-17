@@ -6,6 +6,17 @@
   min-height: 640px;
   overflow: hidden;
   isolation: isolate;
+  perspective: 1200px;
+}
+
+// Palco 3D: recebe o tilt do mouse. Levemente ampliado para que a rotação
+// nunca exponha as bordas das camadas.
+.scene {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  scale: 1.06;
+  will-change: transform;
 }
 
 .layer {
@@ -35,7 +46,7 @@
   object-fit: cover;
   width: 100%;
   height: 100%;
-  opacity: 0.5;
+  opacity: 0.65;
   mask-image: linear-gradient(180deg, transparent 0%, black 22%, black 72%, transparent 100%);
   -webkit-mask-image: linear-gradient(180deg, transparent 0%, black 22%, black 72%, transparent 100%);
 }

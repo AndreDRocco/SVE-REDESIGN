@@ -6,34 +6,54 @@
   // --color-moss-dark (início da janela POV).
   background: linear-gradient(180deg, var(--color-forest) 0%, var(--color-moss-dark) 100%);
   padding-block: clamp(4rem, 10vw, 8rem);
+  overflow: hidden;
   @include mixins.section-padding;
+}
+
+// Modo pinado (JS + sem reduced-motion): a seção vira uma "tela" de altura
+// fixa em que o trilho fica sempre visível enquanto os cards deslizam.
+.pinned {
+  height: 100svh;
+  min-height: 560px;
+  padding-block: 0;
+  padding-top: calc(var(--header-height) + 1rem);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: clamp(1.25rem, 3.5vh, 2.5rem);
+
+  .heading {
+    margin-bottom: 0;
+  }
+
+  .row {
+    overflow: visible;
+  }
 }
 
 .heading {
   @include mixins.display-heading;
   font-size: clamp(2rem, 5vw, 3.5rem);
-  max-width: 20ch;
-  margin-bottom: clamp(3rem, 8vw, 6rem);
+  max-width: 24ch;
+  margin-bottom: clamp(2rem, 6vw, 4rem);
   color: var(--color-mist);
 }
 
-.track {
+// ── Trilho ferroviário horizontal ──────────────────────────────────────────
+// Dois trilhos + dormentes desenhados só com gradientes.
+.railArea {
   position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: clamp(3.5rem, 9vw, 7rem);
+  height: 72px;
+  flex-shrink: 0;
 }
-
-// ── Trilho ferroviário ─────────────────────────────────────────────────────
-// Dois trilhos horizontais + dormentes verticais, desenhados só com gradientes.
-$rail-height: 26px;
 
 .rail {
   position: absolute;
-  left: 0.5rem;
-  right: 0.5rem;
-  top: 0;
-  height: $rail-height;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 26px;
+  transform: translateY(-50%);
   background:
     // dois trilhos horizontais
     linear-gradient(180deg, transparent 5px, rgba(243, 239, 228, 0.22) 5px 8px, transparent 8px 18px, rgba(243, 239, 228, 0.22) 18px 21px, transparent 21px),
@@ -41,17 +61,38 @@ $rail-height: 26px;
     repeating-linear-gradient(90deg, rgba(243, 239, 228, 0.14) 0 4px, transparent 4px 18px);
 }
 
-// Preenchimento dourado que "constrói" o trilho conforme o trem passa.
+// Preenchimento dourado que "constrói" o trilho conforme o trem avança.
 .railFill {
   position: absolute;
-  inset: 0 0 auto auto;
+  inset: 0 auto 0 0;
   width: 0%;
-  height: 100%;
   overflow: hidden;
   background:
     linear-gradient(180deg, transparent 5px, var(--color-gold) 5px 8px, transparent 8px 18px, var(--color-gold) 18px 21px, transparent 21px),
     repeating-linear-gradient(90deg, rgba(212, 162, 76, 0.55) 0 4px, transparent 4px 18px);
   filter: drop-shadow(0 0 6px rgba(212, 162, 76, 0.45));
+}
+
+// Estações marcadas no trilho na quilometragem real do percurso.
+.railStop {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid var(--color-mist-dim);
+  background: var(--color-forest);
+  transition: all 0.5s var(--ease-trilho);
+
+  &.reached {
+    border-color: var(--color-gold);
+    background: var(--color-gold);
+    box-shadow:
+      0 0 0 6px rgba(212, 162, 76, 0.18),
+      0 0 20px rgba(212, 162, 76, 0.5);
+  }
 }
 
 // ── Marcador-trem que atravessa o trilho ───────────────────────────────────
@@ -61,8 +102,8 @@ $rail-height: 26px;
   top: 50%;
   transform: translate(-50%, -50%);
   z-index: 3;
-  width: 46px;
-  height: 46px;
+  width: 52px;
+  height: 52px;
   display: grid;
   place-items: center;
   border-radius: 50%;
@@ -73,8 +114,8 @@ $rail-height: 26px;
     0 6px 18px rgba(8, 20, 16, 0.45);
 
   svg {
-    width: 26px;
-    height: 26px;
+    width: 30px;
+    height: 30px;
     animation: rock 1.6s ease-in-out infinite;
   }
 
@@ -87,8 +128,8 @@ $rail-height: 26px;
 
 .smoke {
   position: absolute;
-  top: 50%;
-  right: -6px;
+  top: -4px;
+  left: 30%;
   width: 8px;
   height: 8px;
   border-radius: 50%;
@@ -120,11 +161,11 @@ $rail-height: 26px;
 @keyframes puff {
   0% {
     opacity: 0.6;
-    transform: translate(0, -50%) scale(0.6);
+    transform: translate(0, 0) scale(0.6);
   }
   100% {
     opacity: 0;
-    transform: translate(30px, calc(-50% + 10px)) scale(1.8);
+    transform: translate(-22px, -26px) scale(1.8);
   }
 }
 
@@ -135,45 +176,55 @@ $rail-height: 26px;
   }
 }
 
-// ── Estações ───────────────────────────────────────────────────────────────
+// ── Cards das paradas (faixa horizontal) ───────────────────────────────────
+.row {
+  display: flex;
+  gap: clamp(1rem, 2.5vw, 1.75rem);
+  will-change: transform;
+  // Fallback sem JS / reduced-motion: a faixa rola no dedo ou trackpad.
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  padding-bottom: 0.5rem;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(243, 239, 228, 0.25) transparent;
+}
+
 .stop {
-  position: relative;
-  padding-top: 3.25rem;
-  opacity: 0.4;
-  transform: translateY(18px);
+  flex: 0 0 auto;
+  width: min(76vw, 380px);
+  scroll-snap-align: center;
+  border: 1px solid rgba(243, 239, 228, 0.12);
+  border-radius: 16px;
+  background: rgba(243, 239, 228, 0.05);
+  backdrop-filter: blur(2px);
+  opacity: 0.45;
+  transform: translateY(14px) scale(0.98);
   transition:
     opacity 0.6s var(--ease-trilho),
-    transform 0.6s var(--ease-trilho);
+    transform 0.6s var(--ease-trilho),
+    border-color 0.6s var(--ease-trilho);
 
   &.active {
     opacity: 1;
-    transform: translateY(0);
-  }
-
-  @media (min-width: 768px) {
-    padding-top: 4.5rem;
+    transform: translateY(0) scale(1);
+    border-color: rgba(212, 162, 76, 0.55);
+    background: rgba(243, 239, 228, 0.08);
   }
 }
 
-.dot {
-  position: absolute;
-  left: 0.3rem;
-  top: 1px;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  border: 2px solid var(--color-mist-dim);
-  background: var(--color-forest);
-  transition: all 0.5s var(--ease-trilho);
-
-  .stop.active & {
-    border-color: var(--color-gold);
-    background: var(--color-gold);
-    box-shadow:
-      0 0 0 8px rgba(212, 162, 76, 0.18),
-      0 0 24px rgba(212, 162, 76, 0.5);
-    transform: scale(1.15);
+@media (prefers-reduced-motion: reduce) {
+  .stop {
+    opacity: 1;
+    transform: none;
   }
+}
+
+.stopButton {
+  display: block;
+  width: 100%;
+  height: 100%;
+  text-align: left;
+  padding: clamp(1.1rem, 2.5vw, 1.6rem);
 }
 
 .stopNumber {
@@ -183,15 +234,10 @@ $rail-height: 26px;
   text-transform: uppercase;
 }
 
-.stopButton {
-  display: block;
-  width: 100%;
-  text-align: left;
-}
-
 .stopName {
   @include mixins.display-heading;
-  font-size: clamp(1.5rem, 3vw, 2.25rem);
+  margin-top: 0.4rem;
+  font-size: clamp(1.35rem, 2.6vw, 1.9rem);
   color: var(--color-mist);
 }
 
@@ -199,4 +245,13 @@ $rail-height: 26px;
   margin-top: 0.5rem;
   max-width: 48ch;
   color: var(--color-mist-dim);
+  font-size: 0.95rem;
+}
+
+.hint {
+  font-size: 0.75rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--color-mist-dim);
+  opacity: 0.7;
 }

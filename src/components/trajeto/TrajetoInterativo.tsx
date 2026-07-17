@@ -1,17 +1,17 @@
 'use client';
 
-import { useRef } from 'react';
+import { useCallback, useRef } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useGsapContext } from '@/lib/scroll/useGsapContext';
-import { scrollToTarget } from '@/lib/scroll/lenis';
+import { scrollToPosition } from '@/lib/scroll/lenis';
 import { useAchievements } from '@/lib/achievements/AchievementsProvider';
 import { trajeto } from '@/lib/data/trajeto';
 import styles from './TrajetoInterativo.module.scss';
 
 gsap.registerPlugin(ScrollTrigger);
 
-// Locomotiva simplificada (vista lateral) usada no marcador que desce o trilho.
+// Locomotiva simplificada (vista lateral) usada no marcador que percorre o trilho.
 function TrainGlyph() {
   return (
     <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden>
@@ -20,51 +20,94 @@ function TrainGlyph() {
   );
 }
 
+// Seção pinada: enquanto o usuário rola, o trem atravessa o trilho (sempre
+// visível) e os cards das paradas deslizam na horizontal em sincronia.
+// Sem JS ou com prefers-reduced-motion, vira uma faixa horizontal rolável.
 export default function TrajetoInterativo() {
   const sectionRef = useRef<HTMLElement>(null);
-  const trackRef = useRef<HTMLDivElement>(null);
+  const rowRef = useRef<HTMLDivElement>(null);
   const railFillRef = useRef<HTMLDivElement>(null);
   const markerRef = useRef<HTMLDivElement>(null);
+  const stRef = useRef<ScrollTrigger | null>(null);
+  const activeRef = useRef(-1);
   const { unlock } = useAchievements();
 
   useGsapContext(sectionRef, () => {
-    if (!trackRef.current) return;
+    const section = sectionRef.current;
+    const row = rowRef.current;
+    if (!section || !row) return;
 
-    // O trem e o preenchimento dourado do trilho seguem juntos o progresso do
-    // scroll pela seção — o trem "constrói" o caminho conforme avança.
-    ScrollTrigger.create({
-      trigger: trackRef.current,
-      start: 'top center',
-      end: 'bottom center',
-      scrub: true,
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reducedMotion) return;
+
+    section.classList.add(styles.pinned);
+
+    const stops = gsap.utils.toArray<HTMLElement>(`.${styles.stop}`, row);
+    const dots = gsap.utils.toArray<HTMLElement>(`.${styles.railStop}`, section);
+    const distance = () => Math.max(0, row.scrollWidth - row.offsetWidth);
+
+    stRef.current = ScrollTrigger.create({
+      trigger: section,
+      start: 'top top',
+      end: () => `+=${Math.max(900, distance() + window.innerHeight * 0.4)}`,
+      pin: true,
+      scrub: 0.6,
+      invalidateOnRefresh: true,
       onUpdate: (self) => {
-        const pct = self.progress * 100;
+        const p = self.progress;
+        const pct = p * 100;
         if (railFillRef.current) railFillRef.current.style.width = `${pct}%`;
         if (markerRef.current) markerRef.current.style.left = `${pct}%`;
+        gsap.set(row, { x: -p * distance() });
+
+        // Estações acendem quando o trem passa pela quilometragem delas.
+        dots.forEach((dot, i) => dot.classList.toggle(styles.reached, trajeto[i].kmPercurso <= pct + 1));
+
+        const active = Math.min(trajeto.length - 1, Math.round(p * (trajeto.length - 1)));
+        if (active !== activeRef.current) {
+          activeRef.current = active;
+          stops.forEach((el, i) => el.classList.toggle(styles.active, i === active));
+          if (active === trajeto.length - 1) unlock('explorador-da-serra');
+        }
       },
     });
 
-    const stops = gsap.utils.toArray<HTMLElement>(`.${styles.stop}`, sectionRef.current ?? undefined);
-    stops.forEach((stop, index) => {
-      ScrollTrigger.create({
-        trigger: stop,
-        start: 'top 65%',
-        end: 'bottom 35%',
-        toggleClass: { targets: stop, className: styles.active },
-        onEnter: () => {
-          if (index === stops.length - 1) unlock('explorador-da-serra');
-        },
-      });
-    });
+    return () => {
+      stRef.current = null;
+      section.classList.remove(styles.pinned);
+    };
   });
+
+  // Clicar numa parada leva o scroll (e o trem) até o ponto correspondente.
+  const goToStop = useCallback((index: number) => {
+    const st = stRef.current;
+    if (!st) {
+      document
+        .getElementById(`parada-${trajeto[index].slug}`)
+        ?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+      return;
+    }
+    scrollToPosition(st.start + ((st.end - st.start) * index) / (trajeto.length - 1));
+  }, []);
 
   return (
     <section ref={sectionRef} id="trajeto" className={styles.section}>
       <h2 className={styles.heading}>Curitiba → Morretes, parada a parada</h2>
 
-      <div ref={trackRef} className={styles.track}>
-        <div className={styles.rail} aria-hidden>
+      <div className={styles.railArea} aria-hidden>
+        <div className={styles.rail}>
           <div ref={railFillRef} className={styles.railFill} />
+          {trajeto.map((parada, index) => (
+            <button
+              key={parada.slug}
+              type="button"
+              tabIndex={-1}
+              data-cursor="hover"
+              className={styles.railStop}
+              style={{ left: `${parada.kmPercurso}%` }}
+              onClick={() => goToStop(index)}
+            />
+          ))}
           <div ref={markerRef} className={styles.trainMarker}>
             <span className={styles.smoke} />
             <span className={styles.smoke} />
@@ -72,17 +115,15 @@ export default function TrajetoInterativo() {
             <TrainGlyph />
           </div>
         </div>
+      </div>
 
+      <div ref={rowRef} className={styles.row}>
         {trajeto.map((parada, index) => (
           <div key={parada.slug} className={styles.stop} data-scrollytelling>
-            <div className={styles.dot} />
-            <button
-              type="button"
-              data-cursor="hover"
-              className={styles.stopButton}
-              onClick={() => scrollToTarget(`#parada-${parada.slug}`, -120)}
-            >
-              <span className={styles.stopNumber}>Parada {String(index + 1).padStart(2, '0')}</span>
+            <button type="button" data-cursor="hover" className={styles.stopButton} onClick={() => goToStop(index)}>
+              <span className={styles.stopNumber}>
+                Parada {String(index + 1).padStart(2, '0')} · km {parada.kmPercurso}
+              </span>
               <h3 id={`parada-${parada.slug}`} className={styles.stopName}>
                 {parada.nome}
               </h3>
@@ -91,6 +132,8 @@ export default function TrajetoInterativo() {
           </div>
         ))}
       </div>
+
+      <p className={styles.hint}>Role para acompanhar o trem — ou clique numa estação para ir direto até ela.</p>
     </section>
   );
 }

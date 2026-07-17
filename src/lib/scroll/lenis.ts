@@ -17,3 +17,11 @@ export function scrollToTarget(target: string | HTMLElement, offset = 0) {
   const el = typeof target === 'string' ? document.querySelector(target) : target;
   el?.scrollIntoView({ behavior: 'smooth' });
 }
+
+export function scrollToPosition(top: number) {
+  if (instance) {
+    instance.scrollTo(top, { duration: 1.4 });
+    return;
+  }
+  window.scrollTo({ top, behavior: 'smooth' });
+}

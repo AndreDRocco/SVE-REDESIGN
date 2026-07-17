@@ -14,7 +14,7 @@ export default function Footer() {
         <div className="text-sm text-mist-dim">
           <p className="mb-3 font-semibold text-mist">Contato</p>
           <p>
-            <a href="mailto:contato@serraverdeexpress.com.br" data-cursor="hover" className="hover:text-gold">
+            <a href="mailto:contato@serraverdeexpress.com.br" data-cursor="hover" className="hover:text-sunset-light">
               contato@serraverdeexpress.com.br
             </a>
           </p>

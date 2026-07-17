@@ -33,7 +33,7 @@ export default function AchievementToast() {
               🏅
             </span>
             <div>
-              <p className="text-sm font-semibold text-gold">{def.titulo}</p>
+              <p className="text-sm font-semibold text-sunset-light">{def.titulo}</p>
               <p className="text-xs text-mist-dim">{def.descricao}</p>
             </div>
           </motion.div>
