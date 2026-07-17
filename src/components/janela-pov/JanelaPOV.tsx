@@ -51,7 +51,7 @@ export default function JanelaPOV() {
     ScrollTrigger.create({
       trigger: sectionRef.current,
       start: 'top top',
-      end: '+=1500',
+      end: '+=800',
       pin: true,
       scrub: true,
       onUpdate: (self) => {
@@ -59,6 +59,9 @@ export default function JanelaPOV() {
         scenes.forEach((scene, i) => {
           gsap.to(scene, { opacity: i === activeIndex ? 1 : 0, duration: 0.3, overwrite: 'auto' });
         });
+      },
+      onComplete: () => {
+        ScrollTrigger.refresh();
       },
     });
   });

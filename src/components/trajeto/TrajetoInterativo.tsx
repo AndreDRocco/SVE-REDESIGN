@@ -31,7 +31,7 @@ export default function TrajetoInterativo() {
     if (!trackRef.current) return;
 
     // O trem e o preenchimento dourado do trilho seguem juntos o progresso do
-    // scroll pela seção — o trem "constrói" o caminho conforme desce.
+    // scroll pela seção — o trem "constrói" o caminho conforme avança.
     ScrollTrigger.create({
       trigger: trackRef.current,
       start: 'top center',
@@ -39,8 +39,8 @@ export default function TrajetoInterativo() {
       scrub: true,
       onUpdate: (self) => {
         const pct = self.progress * 100;
-        if (railFillRef.current) railFillRef.current.style.height = `${pct}%`;
-        if (markerRef.current) markerRef.current.style.top = `${pct}%`;
+        if (railFillRef.current) railFillRef.current.style.width = `${pct}%`;
+        if (markerRef.current) markerRef.current.style.left = `${pct}%`;
       },
     });
 
