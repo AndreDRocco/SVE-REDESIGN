@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useGsapContext } from '@/lib/scroll/useGsapContext';
@@ -12,11 +12,15 @@ import styles from './TrajetoInterativo.module.scss';
 gsap.registerPlugin(ScrollTrigger);
 
 const BOOKING_URL = 'https://serraverdeexpress.com.br/booking';
-// Distância de scroll dedicada a cada parada dentro do pin.
-const SCROLL_PER_STOP = 750;
+// Distância de scroll por perna da viagem. São 5 pernas: 4 de ida
+// (Curitiba → Morretes) + 1 de volta expressa (Morretes → Curitiba).
+const SCROLL_PER_LEG = 700;
+const LEGS = trajeto.length; // 5 chegadas de ida (0..4) + retorno (n = 5)
 
-// Locomotiva simplificada (vista lateral) — fica fixa no centro da tela; é o
-// mundo (cubos de fotos + trilho) que desliza por baixo dela.
+// paradaAt(n): parada correspondente à chegada n do ciclo (n = 5 → Curitiba).
+const paradaAt = (n: number) => trajeto[n % trajeto.length];
+
+// Locomotiva simplificada (vista lateral) — viaja junto com o cubo.
 function TrainGlyph() {
   return (
     <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden>
@@ -25,85 +29,121 @@ function TrainGlyph() {
   );
 }
 
-// HERO do site: seção pinada onde o trem fica parado no centro da tela e o
-// trilho + cubos 3D com fotos reais de cada parada deslizam por baixo dele
-// conforme o usuário rola. O cubo que cruza o centro gira revelando as fotos
-// daquele trecho (3 fotos + 1 face de informação, caixa fechada de 4 faces).
-// Sem JS ou com prefers-reduced-motion, vira uma faixa horizontal rolável
-// com os cubos parados na primeira foto.
+// HERO do site: um único cubo 3D viaja o trilho com o trem, parada a parada,
+// num ciclo de ida e volta (Curitiba → Morretes → Curitiba). Durante cada
+// perna, o fundo em tela cheia mostra a foto do destino; na chegada ela some
+// exatamente enquanto a face do cubo com a mesma foto gira para a frente —
+// a foto "pousa" no cubo, junto com as informações da parada.
+//
+// Tudo deriva de um único valor f = progress * 5 (posição contínua no ciclo):
+//   - posição x do cubo/trem no trilho (ida 0→4, volta 4→5 deslizando de volta)
+//   - rotação do cubo (-f * 90°; a cada chegada, face plana)
+//   - opacidade/zoom do fundo (sin(π·frac): zera nas chegadas, pico no meio)
+//   - estações acesas no trilho
+// As 4 faces do cubo são reutilizadas: quando a chegada n muda, a face que
+// está de perfil (invisível) recebe o conteúdo da próxima parada.
+//
+// Sem JS ou com prefers-reduced-motion, vira uma fileira horizontal rolável
+// de cartões planos com as mesmas fotos e informações.
 export default function TrajetoInterativo() {
   const sectionRef = useRef<HTMLElement>(null);
   const areaRef = useRef<HTMLDivElement>(null);
-  const rowRef = useRef<HTMLDivElement>(null);
-  const drumRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const railRef = useRef<HTMLDivElement>(null);
+  const travellerRef = useRef<HTMLDivElement>(null);
+  const drumRef = useRef<HTMLDivElement>(null);
+  const bgRef = useRef<HTMLDivElement>(null);
   const stRef = useRef<ScrollTrigger | null>(null);
-  const activeRef = useRef(-1);
+  const lastNRef = useRef(0);
+  const lastLegRef = useRef(-1);
+  const unlockedRef = useRef(false);
   const { unlock } = useAchievements();
+
+  // faceMap[k] = chegada n cujo conteúdo está na face k do cubo (n = 0..5).
+  // A face k fica de frente quando n % 4 === k, então a troca de conteúdo
+  // acontece sempre com a face escondida/de perfil — sem "pulo" visual.
+  const [faceMap, setFaceMap] = useState<number[]>([0, 1, 2, 3]);
 
   useGsapContext(sectionRef, () => {
     const section = sectionRef.current;
-    const area = areaRef.current;
-    const row = rowRef.current;
-    if (!section || !area || !row) return;
+    const rail = railRef.current;
+    const traveller = travellerRef.current;
+    const drum = drumRef.current;
+    const bg = bgRef.current;
+    if (!section || !rail || !traveller || !drum || !bg) return;
 
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (reducedMotion) return;
 
     section.classList.add(styles.pinned);
 
-    const stages = gsap.utils.toArray<HTMLElement>(`.${styles.stage}`, row);
     const dots = gsap.utils.toArray<HTMLElement>(`.${styles.railStop}`, section);
-    const N = stages.length;
-    if (N === 0) return;
 
-    // Centros reais de cada cubo, lidos do layout (offsetLeft é relativo ao
-    // .row, que é position:relative) — nada de parsear strings de CSS, então
-    // não há como produzir NaN e travar o transform silenciosamente.
-    const centers: number[] = [];
-    let areaCenter = 0;
+    // Medidas lidas direto do layout (offsetLeft/offsetWidth) — nunca de
+    // strings de CSS, que já produziram NaN e travaram o transform num bug
+    // anterior desta seção.
+    const m = { railLeft: 0, railWidth: 0, travellerHalf: 0 };
     const measure = () => {
-      centers.length = 0;
-      stages.forEach((el) => centers.push(el.offsetLeft + el.offsetWidth / 2));
-      areaCenter = area.offsetWidth / 2;
+      m.railLeft = rail.offsetLeft;
+      m.railWidth = rail.offsetWidth;
+      m.travellerHalf = traveller.offsetWidth / 2;
     };
     measure();
 
-    const setX = gsap.quickSetter(row, 'x', 'px');
+    const setX = gsap.quickSetter(traveller, 'x', 'px');
+    const setBgOpacity = gsap.quickSetter(bg, 'opacity');
+    const setBgScale = gsap.quickSetter(bg, 'scale');
 
     stRef.current = ScrollTrigger.create({
       trigger: section,
       start: 'top top',
-      end: `+=${(N - 1) * SCROLL_PER_STOP}`,
+      end: `+=${LEGS * SCROLL_PER_LEG}`,
       pin: true,
       scrub: 0.6,
       invalidateOnRefresh: true,
       onRefresh: measure,
       onUpdate: (self) => {
-        // f = posição contínua do "foco" em unidades de parada (0 → N-1).
-        const f = self.progress * (N - 1);
-        const i0 = Math.min(N - 2, Math.max(0, Math.floor(f)));
-        const frac = Math.min(1, Math.max(0, f - i0));
-        const focusCenter = centers[i0] + (centers[i0 + 1] - centers[i0]) * frac;
-        const x = areaCenter - focusCenter;
+        const f = self.progress * LEGS; // 0 → 5 (posição contínua no ciclo)
+
+        // Posição no trilho: ida linear (0→4); volta expressa (4→5 desliza
+        // de Morretes de volta até Curitiba).
+        const pos = f <= 4 ? f : 4 - (f - 4) * 4;
+        const x = m.railLeft + m.railWidth * (pos / 4) - m.travellerHalf;
         if (Number.isFinite(x)) setX(x);
 
-        // Estações do trilho acendem conforme o foco as ultrapassa.
-        dots.forEach((dot, i) => dot.classList.toggle(styles.reached, f >= i - 0.05));
+        // Cubo gira 90° por perna; a cada chegada, face plana de frente.
+        drum.style.transform = `rotateY(${-f * 90}deg)`;
 
-        // O cubo gira uma volta completa (4 faces de 90°) enquanto atravessa a
-        // janela central; fora dela fica acomodado numa face plana.
-        stages.forEach((_, i) => {
-          const drum = drumRefs.current[i];
-          if (!drum) return;
-          const local = Math.min(1, Math.max(0, f - i + 0.5));
-          drum.style.transform = `rotateY(${-local * 360}deg)`;
-        });
+        // Fundo = foto do destino da perna atual. Troca de foto só acontece
+        // na fronteira da perna, quando a opacidade está em zero.
+        const leg = Math.min(LEGS - 1, Math.floor(f));
+        const frac = Math.min(1, Math.max(0, f - leg));
+        if (leg !== lastLegRef.current) {
+          lastLegRef.current = leg;
+          bg.style.backgroundImage = `url(${paradaAt(leg + 1).imagens[0]})`;
+        }
+        setBgOpacity(Math.sin(Math.PI * frac) * 0.5);
+        setBgScale(1.15 - 0.15 * frac);
 
-        const active = Math.round(f);
-        if (active !== activeRef.current) {
-          activeRef.current = active;
-          stages.forEach((el, i) => el.classList.toggle(styles.active, i === active));
-          if (active === N - 1) unlock('explorador-da-serra');
+        // Estações acendem quando o trem passa; na volta, seguem acesas.
+        dots.forEach((dot, i) => dot.classList.toggle(styles.reached, f >= i - 0.02));
+
+        // Troca de conteúdo das faces escondidas quando a chegada muda.
+        const n = Math.round(f);
+        if (n !== lastNRef.current) {
+          lastNRef.current = n;
+          setFaceMap((prev) => {
+            const next = [...prev];
+            for (const d of [-1, 0, 1]) {
+              const arrival = Math.min(LEGS, Math.max(0, n + d));
+              next[arrival % 4] = arrival;
+            }
+            return next.every((v, k) => v === prev[k]) ? prev : next;
+          });
+        }
+
+        if (!unlockedRef.current && f >= 3.95) {
+          unlockedRef.current = true;
+          unlock('explorador-da-serra');
         }
       },
     });
@@ -114,100 +154,109 @@ export default function TrajetoInterativo() {
     };
   });
 
-  // Clicar num cubo leva o scroll (e o trem) até a parada correspondente.
-  const goToStop = useCallback((index: number) => {
+  // Leva o scroll (e o trem) até a chegada m do ciclo (0..5).
+  const goToArrival = useCallback((arrival: number) => {
     const st = stRef.current;
-    if (!st) {
-      document
-        .getElementById(`parada-${trajeto[index].slug}`)
-        ?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-      return;
-    }
-    scrollToPosition(st.start + ((st.end - st.start) * index) / (trajeto.length - 1));
+    if (!st) return;
+    scrollToPosition(st.start + ((st.end - st.start) * arrival) / LEGS);
   }, []);
+
+  const nextStop = useCallback(() => {
+    const st = stRef.current;
+    if (!st) return;
+    const f = st.progress * LEGS;
+    goToArrival(Math.min(LEGS, Math.round(f) + 1));
+  }, [goToArrival]);
 
   return (
     <section ref={sectionRef} id="top" className={styles.section}>
+      {/* Fundo em tela cheia com a foto do destino da perna atual — 100%
+          gerenciado via refs (imagem, opacidade e zoom) para o React nunca
+          sobrescrever os estilos aplicados pelo GSAP. */}
+      <div ref={bgRef} className={styles.bgPhoto} aria-hidden />
+      <div className={styles.bgOverlay} aria-hidden />
+
       <div className={styles.intro}>
-        <p className={styles.eyebrow}>Curitiba → Morretes · parada a parada</p>
+        <p className={styles.eyebrow}>Curitiba → Morretes · ida e volta</p>
         <h1 className={styles.heading}>O trem antes do trem começa aqui.</h1>
       </div>
 
       <div ref={areaRef} className={styles.stageArea}>
-        <div className={styles.railTrack} aria-hidden>
+        <div ref={railRef} className={styles.railTrack}>
           {trajeto.map((parada, index) => (
-            <span
+            <button
               key={parada.slug}
+              type="button"
+              data-cursor="hover"
               className={styles.railStop}
               style={{ left: `${(index / (trajeto.length - 1)) * 100}%` }}
+              onClick={() => goToArrival(index)}
+              aria-label={`Ir para ${parada.nome}`}
             />
           ))}
         </div>
 
-        {/* Trem fixo no centro: é o marco visual que nunca se move — o mundo
-            desliza por baixo dele, dando a sensação de avanço contínuo. */}
-        <div className={styles.centerTrain} aria-hidden>
-          <span className={styles.smoke} />
-          <span className={styles.smoke} />
-          <span className={styles.smoke} />
-          <div className={styles.trainBadge}>
-            <TrainGlyph />
-          </div>
-        </div>
-
-        <div ref={rowRef} className={styles.row}>
-          {trajeto.map((parada, index) => (
-            <div key={parada.slug} className={styles.stage} data-scrollytelling>
-              <button
-                type="button"
-                data-cursor="hover"
-                className={styles.cubeButton}
-                onClick={() => goToStop(index)}
-                aria-label={`Ir para ${parada.nome}`}
-              >
-                <div className={styles.cubeViewport}>
-                  <div
-                    ref={(el) => {
-                      drumRefs.current[index] = el;
-                    }}
-                    className={styles.cubeDrum}
-                  >
-                    {parada.imagens.slice(0, 3).map((img, faceIndex) => (
-                      <div
-                        key={img + faceIndex}
-                        className={styles.cubeFace}
-                        style={{
-                          transform: `rotateY(${faceIndex * 90}deg) translateZ(var(--cube-radius))`,
-                          backgroundImage: `url(${img})`,
-                        }}
-                      />
-                    ))}
-                    {/* 4ª face: cartão de informação — fecha a caixa 3D e dá
-                        respiro visual entre as fotos durante o giro. */}
+        {/* Cubo + trem viajam juntos: um único transform move os dois. */}
+        <div ref={travellerRef} className={styles.traveller}>
+          <button
+            type="button"
+            data-cursor="hover"
+            className={styles.cubeButton}
+            onClick={nextStop}
+            aria-label="Avançar para a próxima parada"
+          >
+            <div className={styles.cubeViewport}>
+              <div ref={drumRef} className={styles.cubeDrum}>
+                {faceMap.map((arrival, k) => {
+                  const parada = paradaAt(arrival);
+                  return (
                     <div
-                      className={`${styles.cubeFace} ${styles.cubeFaceInfo}`}
-                      style={{ transform: 'rotateY(270deg) translateZ(var(--cube-radius))' }}
+                      key={k}
+                      className={styles.cubeFace}
+                      style={{
+                        transform: `rotateY(${k * 90}deg) translateZ(var(--cube-radius))`,
+                        backgroundImage: `linear-gradient(180deg, rgba(8, 20, 16, 0) 38%, rgba(8, 20, 16, 0.88) 100%), url(${parada.imagens[0]})`,
+                      }}
                     >
-                      <span>km {parada.kmPercurso}</span>
-                      <strong>{parada.nome}</strong>
+                      <span className={styles.faceKm}>
+                        Parada {String((arrival % trajeto.length) + 1).padStart(2, '0')} · km {parada.kmPercurso}
+                      </span>
+                      <strong className={styles.faceName}>{parada.nome}</strong>
+                      <p className={styles.faceDesc}>{parada.descricaoCurta}</p>
                     </div>
-                  </div>
-                </div>
-              </button>
-
-              <span className={styles.stopNumber}>
-                Parada {String(index + 1).padStart(2, '0')} · km {parada.kmPercurso}
-              </span>
-              <h2 id={`parada-${parada.slug}`} className={styles.stopName}>
-                {parada.nome}
-              </h2>
-              <p className={styles.stopDesc}>{parada.descricaoCurta}</p>
+                  );
+                })}
+              </div>
             </div>
-          ))}
+          </button>
+
+          <div className={styles.badgeWrap} aria-hidden>
+            <span className={styles.smoke} />
+            <span className={styles.smoke} />
+            <span className={styles.smoke} />
+            <div className={styles.trainBadge}>
+              <TrainGlyph />
+            </div>
+          </div>
         </div>
       </div>
 
-      <p className={styles.hint}>Role para acompanhar o trem — ou clique num cubo para ir direto até ele.</p>
+      <p className={styles.hint}>Role para viajar — Curitiba a Morretes, ida e volta.</p>
+
+      {/* Fallback estático (sem JS / reduced-motion): cartões planos roláveis. */}
+      <div className={styles.fallbackRow}>
+        {trajeto.map((parada, index) => (
+          <article key={parada.slug} id={`parada-${parada.slug}`} className={styles.fallbackCard}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={parada.imagens[0]} alt="" loading="lazy" />
+            <span className={styles.faceKm}>
+              Parada {String(index + 1).padStart(2, '0')} · km {parada.kmPercurso}
+            </span>
+            <strong className={styles.faceName}>{parada.nome}</strong>
+            <p className={styles.faceDesc}>{parada.descricaoCurta}</p>
+          </article>
+        ))}
+      </div>
 
       <a href={BOOKING_URL} data-cursor="hover" className={styles.floatingCta}>
         Reservar agora
