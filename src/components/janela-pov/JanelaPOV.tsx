@@ -10,14 +10,37 @@ gsap.registerPlugin(ScrollTrigger);
 
 const CDN = 'https://serraverdeexpress.com.br/uploads';
 
-// Fotos oficiais publicadas em serraverdeexpress.com.br — trocar por vídeo POV
-// real da janela quando o material existir.
+// Fotos oficiais publicadas em serraverdeexpress.com.br — cada uma conferida
+// visualmente antes de entrar aqui (a leva anterior tinha uma foto de mesa de
+// comida e um jipe atolando no lugar de paisagem — nunca tinha sido olhada de
+// verdade, só assumida pelo nome do arquivo). Trocar por vídeo POV real da
+// janela quando o material existir.
 const SCENES = [
-  { id: 'serra', legenda: 'A serra abrindo passagem para os trilhos', img: `${CDN}/0000/1/2024/03/01/banner-topo-vagoes-sve.jpg` },
-  { id: 'mata', legenda: 'Mata Atlântica fechada dos dois lados do vagão', img: `${CDN}/0000/1/2024/03/01/img-thumb-serra-adventure-completo.jpg` },
-  { id: 'por-do-sol', legenda: 'O pôr do sol acompanhando a descida', img: `${CDN}/0000/1/2024/02/06/passeio-por-do-sol-1.jpg` },
-  { id: 'morretes', legenda: 'Morretes esperando no fim da linha', img: `${CDN}/0000/1/2024/02/08/pacote-morretes-com-almoco-2.jpg` },
-  { id: 'litoral', legenda: 'O litoral logo depois da serra', img: `${CDN}/0000/1/2024/03/01/img-thumb-ilha-do-meu-volta-trem.jpg` },
+  {
+    id: 'partida',
+    legenda: 'A tripulação prepara o embarque em Curitiba',
+    img: `${CDN}/0000/1/2024/02/05/blog-trem-republicano.jpg`,
+  },
+  {
+    id: 'viaduto',
+    legenda: 'O trem avança pelos viadutos suspensos sobre o vale',
+    img: `${CDN}/0000/1/2024/02/05/blog-trilhos-trem-brasil-1.jpg`,
+  },
+  {
+    id: 'por-do-sol-janela',
+    legenda: 'O pôr do sol emoldurado pela janela do vagão',
+    img: `${CDN}/0000/37/2025/02/19/whatsapp-image-2025-02-19-at-173139.jpeg`,
+  },
+  {
+    id: 'por-do-sol-trem',
+    legenda: 'O sol se despede enquanto a serra escurece',
+    img: `${CDN}/0000/1/2024/02/06/passeio-por-do-sol-1.jpg`,
+  },
+  {
+    id: 'morretes',
+    legenda: 'Morretes esperando no fim da linha',
+    img: `${CDN}/0000/1/2024/02/08/pacote-morretes-com-almoco.jpg`,
+  },
 ];
 
 // Scroll-jacking deliberadamente curto (~150vh) e só ativado fora de
@@ -27,7 +50,6 @@ export default function JanelaPOV() {
   const sectionRef = useRef<HTMLElement>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
   const [muted, setMuted] = useState(true);
-  const [pinned, setPinned] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
 
   useEffect(() => {
@@ -47,18 +69,23 @@ export default function JanelaPOV() {
     }
   }, [muted]);
 
-  // Ao trocar do layout estático para o pinado, a altura da seção muda —
-  // o ScrollTrigger precisa remedir tudo depois que o DOM atualiza.
-  useEffect(() => {
-    if (pinned) ScrollTrigger.refresh();
-  }, [pinned]);
-
   useGsapContext(sectionRef, () => {
+    const viewport = viewportRef.current;
+    if (!viewport) return;
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (reducedMotion || !viewportRef.current) return;
+    if (reducedMotion) return;
 
-    setPinned(true);
-    const scenes = gsap.utils.toArray<HTMLElement>(`.${styles.scene}`, viewportRef.current);
+    // Troca de layout ANTES de criar o ScrollTrigger, via classList direto —
+    // não por estado do React. Se fosse useState, o ScrollTrigger.create
+    // mediria a seção AINDA no layout estático (bem mais alto, cenas
+    // empilhadas), e um refresh() só rodaria depois do re-render — nessa
+    // janela, o pin calcula a posição/altura erradas e a rolagem trava no
+    // meio do caminho (era exatamente esse o bug relatado: scroll não
+    // avançava e só metade das cenas ficava visível).
+    viewport.classList.remove(styles.scenesStatic);
+    viewport.classList.add(styles.pinnedMode);
+
+    const scenes = gsap.utils.toArray<HTMLElement>(`.${styles.scene}`, viewport);
     gsap.set(scenes[0], { opacity: 1 });
 
     ScrollTrigger.create({
@@ -81,7 +108,7 @@ export default function JanelaPOV() {
       <h2 className={styles.heading}>Dentro do trem, a janela conta a história</h2>
 
       <div className={styles.frameOuter}>
-        <div ref={viewportRef} className={`${styles.viewport} ${pinned ? styles.pinnedMode : styles.scenesStatic}`}>
+        <div ref={viewportRef} className={`${styles.viewport} ${styles.scenesStatic}`}>
           {SCENES.map((scene) => (
             <div
               key={scene.id}

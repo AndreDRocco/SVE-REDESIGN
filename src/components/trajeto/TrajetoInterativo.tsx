@@ -129,6 +129,12 @@ export default function TrajetoInterativo() {
       geo.ry = Math.max(40, (H - topClearance - bottomClearance) / 2);
       geo.cy = topClearance + geo.ry;
 
+      // O centro do circuito (nome + CTA) precisa ficar centralizado no MEIO
+      // REAL da elipse (geo.cy), não no meio geométrico da área — como a
+      // elipse é empurrada pra baixo pra abrir espaço pro cubo em cima do
+      // trem, o texto ficava alto demais e quase embaixo do trilho.
+      area.style.setProperty('--oval-cy', `${geo.cy}px`);
+
       const outer = ovalOuterRef.current;
       const inner = ovalInnerRef.current;
       [outer, inner].forEach((el, i) => {

@@ -142,10 +142,16 @@
   }
 }
 
-// Centro do circuito: nome da empresa + CTA.
+// Centro do circuito: nome da empresa + CTA. Ancorado em --oval-cy (o
+// centro vertical REAL da elipse, calculado via JS) em vez do centro
+// geométrico da área — a elipse é empurrada pra baixo pra abrir espaço
+// pro cubo empilhado sobre o trem, então os dois centros não coincidem.
 .centerIntro {
   position: absolute;
-  inset: 0;
+  left: 0;
+  right: 0;
+  top: var(--oval-cy, 50%);
+  transform: translateY(-50%);
   z-index: 2;
   display: flex;
   flex-direction: column;
@@ -154,12 +160,26 @@
   gap: clamp(0.6rem, 1.8vh, 1rem);
   text-align: center;
   pointer-events: none;
-  animation: introIn 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+  // Keyframe dedicado (não o introIn compartilhado): precisa incluir o
+  // translateY(-50%) de centralização em todos os frames, senão a animação
+  // sobrescreve esse transform e o texto volta a desalinhar do trilho.
+  animation: centerIntroIn 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
 
   // Só o CTA volta a receber cliques — o resto deixa o mouse passar para o
   // cubo/estações quando cruzam o centro.
   a {
     pointer-events: auto;
+  }
+}
+
+@keyframes centerIntroIn {
+  from {
+    opacity: 0;
+    transform: translateY(calc(-50% + 28px));
+  }
+  to {
+    opacity: 1;
+    transform: translateY(-50%);
   }
 }
 
