@@ -1,7 +1,10 @@
 @use '../../styles/mixins';
 
 .section {
-  background: var(--color-forest);
+  // Encadeamento: do --color-mist (fim dos vagões) ao --color-sunset-light
+  // (início do FAQ) — a tarde vai esquentando rumo ao pôr do sol.
+  background: linear-gradient(180deg, var(--color-mist) 0%, var(--color-sunset-light) 100%);
+  color: var(--color-forest-deep);
   padding-block: clamp(4rem, 10vw, 8rem);
   @include mixins.section-padding;
 }
@@ -11,26 +14,39 @@
   font-size: clamp(2rem, 5vw, 3.5rem);
   max-width: 22ch;
   margin-bottom: clamp(2rem, 6vw, 4rem);
+  color: var(--color-forest-deep);
 }
 
 .grid {
   display: grid;
   gap: 1.5rem;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr));
 }
 
 .card {
   position: relative;
   border-radius: 16px;
   overflow: hidden;
-  border: 1px solid rgba(243, 239, 228, 0.12);
-  background: var(--color-forest-light);
+  border: 1px solid rgba(14, 31, 23, 0.1);
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(14, 31, 23, 0.08);
   display: flex;
   flex-direction: column;
+  transition:
+    transform 0.3s var(--ease-trilho),
+    box-shadow 0.3s var(--ease-trilho);
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 16px 32px rgba(14, 31, 23, 0.14);
+  }
 }
 
 .preview {
-  height: 140px;
+  display: block;
+  width: 100%;
+  height: 160px;
+  object-fit: cover;
 }
 
 .body {
@@ -50,16 +66,16 @@
 .badge {
   font-size: 0.7rem;
   border-radius: 999px;
-  border: 1px solid rgba(243, 239, 228, 0.25);
+  border: 1px solid rgba(14, 31, 23, 0.25);
   padding: 0.15rem 0.55rem;
-  color: var(--color-mist-dim);
+  color: var(--color-forest);
 }
 
 .destaqueBadge {
   font-size: 0.7rem;
   border-radius: 999px;
-  background: var(--color-gold);
-  color: var(--color-forest-deep);
+  background: var(--color-sunset-dark);
+  color: var(--color-mist);
   padding: 0.15rem 0.55rem;
   font-weight: 600;
 }
@@ -68,11 +84,12 @@
   @include mixins.display-heading;
   font-size: 1.1rem;
   line-height: 1.2;
+  color: var(--color-forest-deep);
 }
 
 .location {
   font-size: 0.8rem;
-  color: var(--color-mist-dim);
+  color: var(--color-moss-dark);
 }
 
 .footer {
@@ -80,31 +97,36 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
   padding-top: 0.75rem;
 }
 
 .price {
   font-size: 1.1rem;
   font-weight: 700;
-  color: var(--color-gold);
+  color: var(--color-sunset-dark);
 }
 
 .priceLabel {
   font-size: 0.7rem;
   display: block;
-  color: var(--color-mist-dim);
+  color: var(--color-moss-dark);
   font-weight: 400;
 }
 
 .cta {
   font-size: 0.8rem;
   border-radius: 999px;
-  border: 1px solid var(--color-mist-dim);
-  padding: 0.4rem 0.9rem;
-  transition: all 0.3s var(--ease-trilho);
+  background: var(--color-forest);
+  color: var(--color-mist);
+  padding: 0.5rem 1rem;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  transition: background 0.3s var(--ease-trilho);
 
   &:hover {
-    border-color: var(--color-gold);
-    color: var(--color-gold);
+    background: var(--color-sunset-dark);
   }
 }

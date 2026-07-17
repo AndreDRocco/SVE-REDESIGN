@@ -2,7 +2,9 @@
 
 .section {
   position: relative;
-  background: var(--color-forest-deep);
+  // Encadeamento: começa em --color-moss-dark (fim do trajeto) e clareia até
+  // --color-mist-dim (início da seção de vagões) — a página "sai do túnel".
+  background: linear-gradient(180deg, var(--color-moss-dark) 0%, var(--color-moss) 45%, var(--color-mist-dim) 100%);
   padding-block: clamp(4rem, 10vw, 8rem);
   @include mixins.section-padding;
 }
@@ -12,24 +14,31 @@
   font-size: clamp(2rem, 5vw, 3.5rem);
   max-width: 20ch;
   margin-bottom: clamp(2rem, 6vw, 4rem);
+  color: var(--color-mist);
+  text-shadow: 0 1px 12px rgba(8, 20, 16, 0.35);
 }
 
 .frameOuter {
   position: relative;
   margin-inline: auto;
   max-width: 960px;
-  border: 14px solid var(--color-moss-dark);
+  border: clamp(8px, 1.5vw, 14px) solid var(--color-moss-dark);
   border-radius: 18px;
   box-shadow:
     inset 0 0 0 3px rgba(212, 162, 76, 0.35),
-    0 30px 60px rgba(0, 0, 0, 0.35);
+    0 30px 60px rgba(8, 20, 16, 0.35);
   overflow: hidden;
 }
 
 .viewport {
   position: relative;
   height: 70vh;
-  min-height: 420px;
+  min-height: 380px;
+
+  @media (max-width: 767px) {
+    height: 60vh;
+    min-height: 320px;
+  }
 }
 
 // Modo padrão (sem JS ou reduced-motion): cenas empilhadas normalmente no fluxo.
@@ -39,8 +48,8 @@
 
   .scene {
     position: relative;
-    height: 60vh;
-    min-height: 360px;
+    height: 55vh;
+    min-height: 320px;
     opacity: 1;
     margin-bottom: 2px;
   }
@@ -58,32 +67,21 @@
 .scene {
   display: flex;
   align-items: flex-end;
-  padding: 2rem;
-}
-
-.sceneRio {
-  background: linear-gradient(180deg, var(--color-moss) 0%, var(--color-forest) 100%);
-}
-.sceneCachoeira {
-  background: linear-gradient(180deg, var(--color-moss-light) 0%, var(--color-moss-dark) 100%);
-}
-.sceneFloresta {
-  background: linear-gradient(180deg, var(--color-forest-light) 0%, var(--color-forest-deep) 100%);
-}
-.sceneViaduto {
-  background: linear-gradient(180deg, var(--color-mist-dim) 0%, var(--color-moss-dark) 100%);
-}
-.sceneVilarejo {
-  background: linear-gradient(180deg, var(--color-sunset-light) 0%, var(--color-sunset-dark) 100%);
+  padding: clamp(1rem, 3vw, 2rem);
+  background-size: cover;
+  background-position: center;
+  // Degradê de fallback enquanto a foto carrega (e como plano B se falhar).
+  background-color: var(--color-moss-dark);
 }
 
 .sceneCaption {
   @include mixins.display-heading;
-  font-size: clamp(1.25rem, 2.5vw, 1.75rem);
-  color: var(--color-forest-deep);
-  background: rgba(243, 239, 228, 0.85);
+  font-size: clamp(1.1rem, 2.5vw, 1.75rem);
+  color: var(--color-mist);
+  background: rgba(8, 20, 16, 0.65);
   padding: 0.5rem 1rem;
   border-radius: 8px;
+  backdrop-filter: blur(4px);
 }
 
 .controls {
@@ -93,6 +91,11 @@
   z-index: 5;
   display: flex;
   gap: 0.5rem;
+
+  @media (max-width: 767px) {
+    top: 1.5rem;
+    bottom: auto;
+  }
 }
 
 .muteButton {
@@ -102,4 +105,7 @@
   color: var(--color-mist);
   padding: 0.5rem 1rem;
   font-size: 0.75rem;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
 }
