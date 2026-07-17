@@ -60,9 +60,6 @@ export default function JanelaPOV() {
           gsap.to(scene, { opacity: i === activeIndex ? 1 : 0, duration: 0.3, overwrite: 'auto' });
         });
       },
-      onComplete: () => {
-        ScrollTrigger.refresh();
-      },
     });
   });
 
