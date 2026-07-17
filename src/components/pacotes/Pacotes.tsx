@@ -14,7 +14,8 @@ export default function Pacotes() {
       <div className={styles.grid}>
         {pacotes.map((pacote) => (
           <article key={pacote.slug} className={styles.card}>
-            <div className={`${styles.preview} ${pacote.imagemPlaceholder}`} aria-hidden />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={pacote.imagem} alt="" className={styles.preview} loading="lazy" width={1080} height={700} />
             <div className={styles.body}>
               <div className={styles.badgeRow}>
                 <span className={styles.badge}>{pacote.categoria}</span>

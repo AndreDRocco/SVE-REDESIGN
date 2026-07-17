@@ -2,9 +2,12 @@
 
 .section {
   position: relative;
-  background: linear-gradient(160deg, var(--color-forest-deep), var(--color-moss-dark));
+  // Encadeamento final: do --color-sunset (fim do FAQ) ao --color-forest-deep
+  // (footer) — o dia de viagem termina, anoitece na chegada.
+  background: linear-gradient(180deg, var(--color-sunset) 0%, var(--color-sunset-dark) 35%, var(--color-forest-deep) 100%);
   padding-block: clamp(5rem, 12vw, 9rem);
   text-align: center;
+  color: var(--color-mist);
   @include mixins.section-padding;
 }
 

@@ -39,18 +39,8 @@ a {
   opacity: 1 !important;
 }
 
-// Placeholders de imagem (trocar por fotos/vídeos reais depois). Globais e sem
-// hash de CSS module de propósito: os nomes vêm como string da camada de dados
-// (imagemPlaceholder) e são usados por mais de um componente.
-.gradient-moss {
-  background: linear-gradient(135deg, var(--color-moss), var(--color-forest));
-}
-.gradient-forest {
-  background: linear-gradient(135deg, var(--color-forest-light), var(--color-forest-deep));
-}
-.gradient-gold {
-  background: linear-gradient(135deg, var(--color-gold), var(--color-sunset-dark));
-}
-.gradient-sunset {
-  background: linear-gradient(135deg, var(--color-sunset-light), var(--color-sunset-dark));
-}
+// Fluidez entre seções: nenhuma seção usa cor sólida própria — cada uma tem um
+// degradê que TERMINA exatamente na cor em que a próxima COMEÇA (encadeamento
+// definido nos módulos de cada seção). A "viagem de cor" da página é:
+// amanhecer escuro (hero) → verdes da serra (trajeto/janela) → luz de dia
+// (vagões/pacotes, texto escuro) → pôr do sol (faq) → anoitecer (cta/footer).

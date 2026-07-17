@@ -39,15 +39,18 @@ export default function SeletorDeVagao() {
               className={`${styles.radio} ${styles.srOnly}`}
             />
             <label htmlFor={`vagao-${vagao.categoria}`} data-cursor="hover" className={styles.card}>
-              <div className={`${styles.preview} ${vagao.imagemPlaceholder}`} aria-hidden />
-              <p className={styles.name}>{vagao.nome}</p>
-              <p className={styles.desc}>{vagao.descricao}</p>
-              <div className={styles.badges}>
-                {vagao.diferenciais.map((d) => (
-                  <span key={d} className={styles.badge}>
-                    {d}
-                  </span>
-                ))}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={vagao.imagem} alt="" className={styles.preview} loading="lazy" width={960} height={490} />
+              <div className={styles.cardBody}>
+                <p className={styles.name}>{vagao.nome}</p>
+                <p className={styles.desc}>{vagao.descricao}</p>
+                <div className={styles.badges}>
+                  {vagao.diferenciais.map((d) => (
+                    <span key={d} className={styles.badge}>
+                      {d}
+                    </span>
+                  ))}
+                </div>
               </div>
             </label>
           </div>

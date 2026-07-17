@@ -70,6 +70,16 @@ export default function Hero() {
     <section ref={sectionRef} id="top" className={styles.hero}>
       <div className={`${styles.layer} ${styles.sky}`} data-parallax data-speed="0.15" data-depth="4" />
       <div className={`${styles.layer} ${styles.clouds}`} data-parallax data-speed="0.25" data-depth="8" />
+      <div className={styles.layer} data-parallax data-speed="0.3" data-depth="5">
+        {/* Foto oficial do site atual (banner da página de vagões) — trocar por
+            asset dedicado/vídeo POV quando o material da campanha existir. */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="https://serraverdeexpress.com.br/uploads/0000/1/2024/03/01/banner-topo-vagoes-sve.jpg"
+          alt=""
+          className={styles.photo}
+        />
+      </div>
       <div className={`${styles.layer} ${styles.mountainsFar}`} data-parallax data-speed="0.35" data-depth="6" />
       <div className={`${styles.layer} ${styles.mountainsNear}`} data-parallax data-speed="0.5" data-depth="10" />
       <div className={styles.layer} data-parallax data-speed="0.65" data-depth="14">

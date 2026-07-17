@@ -8,12 +8,16 @@ import styles from './JanelaPOV.module.scss';
 
 gsap.registerPlugin(ScrollTrigger);
 
+const CDN = 'https://serraverdeexpress.com.br/uploads';
+
+// Fotos oficiais publicadas em serraverdeexpress.com.br — trocar por vídeo POV
+// real da janela quando o material existir.
 const SCENES = [
-  { id: 'rio', legenda: 'O rio acompanha boa parte do trajeto', className: styles.sceneRio },
-  { id: 'cachoeira', legenda: 'Cachoeiras aparecem nos trechos mais fechados de mata', className: styles.sceneCachoeira },
-  { id: 'floresta', legenda: 'Mata Atlântica densa dos dois lados do trilho', className: styles.sceneFloresta },
-  { id: 'viaduto', legenda: 'Viadutos históricos vistos de dentro do vagão', className: styles.sceneViaduto },
-  { id: 'vilarejo', legenda: 'Vilarejos ao longo da descida até Morretes', className: styles.sceneVilarejo },
+  { id: 'serra', legenda: 'A serra abrindo passagem para os trilhos', img: `${CDN}/0000/1/2024/03/01/banner-topo-vagoes-sve.jpg` },
+  { id: 'mata', legenda: 'Mata Atlântica fechada dos dois lados do vagão', img: `${CDN}/0000/1/2024/03/01/img-thumb-serra-adventure-completo.jpg` },
+  { id: 'por-do-sol', legenda: 'O pôr do sol acompanhando a descida', img: `${CDN}/0000/1/2024/02/06/passeio-por-do-sol-1.jpg` },
+  { id: 'morretes', legenda: 'Morretes esperando no fim da linha', img: `${CDN}/0000/1/2024/02/08/pacote-morretes-com-almoco-2.jpg` },
+  { id: 'litoral', legenda: 'O litoral logo depois da serra', img: `${CDN}/0000/1/2024/03/01/img-thumb-ilha-do-meu-volta-trem.jpg` },
 ];
 
 // Scroll-jacking deliberadamente curto (~150vh) e só ativado fora de
@@ -66,7 +70,12 @@ export default function JanelaPOV() {
       <div className={styles.frameOuter}>
         <div ref={viewportRef} className={`${styles.viewport} ${pinned ? styles.pinnedMode : styles.scenesStatic}`}>
           {SCENES.map((scene) => (
-            <div key={scene.id} className={`${styles.scene} ${scene.className}`} data-scrollytelling>
+            <div
+              key={scene.id}
+              className={styles.scene}
+              style={{ backgroundImage: `url(${scene.img})` }}
+              data-scrollytelling
+            >
               <span className={styles.sceneCaption}>{scene.legenda}</span>
             </div>
           ))}

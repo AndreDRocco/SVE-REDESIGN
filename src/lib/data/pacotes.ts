@@ -1,8 +1,10 @@
 import type { Pacote } from './types';
 
-// Nomes, preços, durações e URLs espelham o que está publicado hoje em
+const CDN = 'https://serraverdeexpress.com.br/uploads';
+
+// Nomes, preços, durações, URLs e fotos espelham o que está publicado hoje em
 // serraverdeexpress.com.br (raspado em 2026-07-16). Servem para prototipar o
-// layout com números reais — antes de produção, isso deve vir da integração
+// layout com conteúdo real — antes de produção, isso deve vir da integração
 // real (Booking Core hoje; ver README sobre a decisão de backend em aberto).
 export const pacotes: Pacote[] = [
   {
@@ -13,7 +15,7 @@ export const pacotes: Pacote[] = [
     precoAPartir: 488,
     duracaoHoras: 10,
     destaque: true,
-    imagemPlaceholder: 'gradient-forest',
+    imagem: `${CDN}/0000/1/2024/02/08/pacote-morretes-com-almoco-2.jpg`,
     urlReservaAtual:
       'https://serraverdeexpress.com.br/train/pacote-curitiba-morretes-completo-ida-de-trem-e-volta-de-van',
   },
@@ -25,7 +27,7 @@ export const pacotes: Pacote[] = [
     precoAPartir: 206,
     duracaoHoras: 4,
     destaque: false,
-    imagemPlaceholder: 'gradient-moss',
+    imagem: `${CDN}/0000/1/2024/02/08/pacote-morretes-com-almoco.jpg`,
     urlReservaAtual: 'https://serraverdeexpress.com.br/train/bilhete-curitiba-morretes',
   },
   {
@@ -36,7 +38,7 @@ export const pacotes: Pacote[] = [
     precoAPartir: 317,
     duracaoHoras: null,
     destaque: false,
-    imagemPlaceholder: 'gradient-sunset',
+    imagem: `${CDN}/0000/37/2025/02/19/whatsapp-image-2025-02-19-at-173139.jpeg`,
     urlReservaAtual: 'https://serraverdeexpress.com.br/train/pacote-morretes-curitiba-simples',
   },
   {
@@ -47,7 +49,7 @@ export const pacotes: Pacote[] = [
     precoAPartir: 859,
     duracaoHoras: null,
     destaque: false,
-    imagemPlaceholder: 'gradient-forest',
+    imagem: `${CDN}/0000/1/2024/03/01/img-thumb-serra-adventure-completo.jpg`,
     urlReservaAtual: 'https://serraverdeexpress.com.br/train/serra-adventure-completo',
   },
   {
@@ -58,7 +60,7 @@ export const pacotes: Pacote[] = [
     precoAPartir: 839,
     duracaoHoras: null,
     destaque: false,
-    imagemPlaceholder: 'gradient-moss',
+    imagem: `${CDN}/0000/1/2024/03/01/img-thumb-ilha-do-meu-volta-trem.jpg`,
     urlReservaAtual: 'https://serraverdeexpress.com.br/train/passeio-ilha-do-mel-com-volta-de-trem',
   },
   {
@@ -69,7 +71,7 @@ export const pacotes: Pacote[] = [
     precoAPartir: 488,
     duracaoHoras: 11,
     destaque: true,
-    imagemPlaceholder: 'gradient-sunset',
+    imagem: `${CDN}/0000/1/2024/02/06/passeio-por-do-sol-1.jpg`,
     urlReservaAtual: 'https://serraverdeexpress.com.br/train/pacote-morretes-curitiba-por-do-sol-completo',
   },
   {
@@ -80,7 +82,7 @@ export const pacotes: Pacote[] = [
     precoAPartir: 385,
     duracaoHoras: null,
     destaque: true,
-    imagemPlaceholder: 'gradient-gold',
+    imagem: `${CDN}/0059/59122/2026/07/09/classique-dia-dos-pais-capa-de-produto-1080x700.jpg`,
     urlReservaAtual: 'https://serraverdeexpress.com.br/train/expresso-classique',
   },
 ];

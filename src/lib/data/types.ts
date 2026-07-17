@@ -12,7 +12,7 @@ export interface Parada {
 export type CategoriaVagao =
   | 'economica'
   | 'turistica'
-  | 'executiva'
+  | 'boutique'
   | 'litorina-copacabana'
   | 'litorina-foz-do-iguacu'
   | 'litorina-curitiba';
@@ -22,7 +22,8 @@ export interface Vagao {
   nome: string;
   descricao: string;
   diferenciais: string[];
-  imagemPlaceholder: string;
+  // URL absoluta da foto oficial publicada em serraverdeexpress.com.br
+  imagem: string;
 }
 
 export interface Pacote {
@@ -33,7 +34,8 @@ export interface Pacote {
   precoAPartir: number;
   duracaoHoras: number | null;
   destaque: boolean;
-  imagemPlaceholder: string;
+  // URL absoluta da foto oficial publicada em serraverdeexpress.com.br
+  imagem: string;
   urlReservaAtual: string; // aponta para o site/motor de reservas em produção hoje
 }
 

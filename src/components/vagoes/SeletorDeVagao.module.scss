@@ -1,7 +1,10 @@
 @use '../../styles/mixins';
 
 .section {
-  background: var(--color-forest-light);
+  // Zona clara da página (contraste com as seções verdes): encadeia do
+  // --color-mist-dim (fim da janela POV) ao --color-mist (início de pacotes).
+  background: linear-gradient(180deg, var(--color-mist-dim) 0%, var(--color-mist) 100%);
+  color: var(--color-forest-deep);
   padding-block: clamp(4rem, 10vw, 8rem);
   @include mixins.section-padding;
 }
@@ -11,10 +14,11 @@
   font-size: clamp(2rem, 5vw, 3.5rem);
   max-width: 22ch;
   margin-bottom: 0.75rem;
+  color: var(--color-forest-deep);
 }
 
 .subheading {
-  color: var(--color-mist-dim);
+  color: var(--color-moss-dark);
   max-width: 60ch;
   margin-bottom: clamp(2rem, 6vw, 4rem);
 }
@@ -22,7 +26,10 @@
 .grid {
   display: grid;
   gap: 1.5rem;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr));
+  border: 0;
+  padding: 0;
+  margin: 0;
 }
 
 .srOnly {
@@ -42,31 +49,42 @@
   display: block;
   cursor: pointer;
   border-radius: 16px;
-  border: 2px solid rgba(243, 239, 228, 0.15);
-  padding: 1.5rem;
-  background: var(--color-forest);
-  transition: border-color 0.3s var(--ease-trilho), transform 0.3s var(--ease-trilho);
+  border: 2px solid rgba(14, 31, 23, 0.12);
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(14, 31, 23, 0.08);
+  transition:
+    border-color 0.3s var(--ease-trilho),
+    transform 0.3s var(--ease-trilho),
+    box-shadow 0.3s var(--ease-trilho);
 
   &:hover {
     transform: translateY(-4px);
+    box-shadow: 0 16px 32px rgba(14, 31, 23, 0.14);
   }
 }
 
 .preview {
-  height: 120px;
-  border-radius: 10px;
-  margin-bottom: 1rem;
+  display: block;
+  width: 100%;
+  aspect-ratio: 960 / 490;
+  object-fit: cover;
+}
+
+.cardBody {
+  padding: 1.25rem;
 }
 
 .name {
   @include mixins.display-heading;
   font-size: 1.25rem;
   margin-bottom: 0.35rem;
+  color: var(--color-forest-deep);
 }
 
 .desc {
   font-size: 0.875rem;
-  color: var(--color-mist-dim);
+  color: var(--color-moss-dark);
   margin-bottom: 0.75rem;
 }
 
@@ -79,24 +97,28 @@
 .badge {
   font-size: 0.7rem;
   border-radius: 999px;
-  border: 1px solid rgba(243, 239, 228, 0.25);
+  border: 1px solid rgba(14, 31, 23, 0.25);
   padding: 0.2rem 0.6rem;
-  color: var(--color-mist-dim);
+  color: var(--color-forest);
 }
 
 // Estado marcado: reage ao :checked do radio real (input[type=radio] + label)
 .radio:checked + .card {
-  border-color: var(--color-gold);
-  box-shadow: 0 0 0 3px rgba(212, 162, 76, 0.25);
+  border-color: var(--color-sunset-dark);
+  box-shadow: 0 0 0 3px rgba(169, 97, 46, 0.3);
 }
 
 .radio:focus-visible + .card {
-  outline: 2px solid var(--color-gold);
+  outline: 2px solid var(--color-sunset-dark);
   outline-offset: 2px;
 }
 
 .summary {
   margin-top: 2rem;
-  color: var(--color-mist-dim);
+  color: var(--color-moss-dark);
   font-size: 0.9rem;
+
+  strong {
+    color: var(--color-forest-deep);
+  }
 }
