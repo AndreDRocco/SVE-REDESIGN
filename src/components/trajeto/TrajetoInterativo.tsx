@@ -13,12 +13,19 @@ gsap.registerPlugin(ScrollTrigger);
 
 const BOOKING_URL = 'https://serraverdeexpress.com.br/booking';
 // Distância de scroll por perna da viagem. São 5 pernas: 4 de ida
-// (Curitiba → Morretes) + 1 de volta expressa (Morretes → Curitiba).
-const SCROLL_PER_LEG = 700;
+// (Curitiba → Morretes) + 1 fechando o circuito de volta a Curitiba.
+const SCROLL_PER_LEG = 650;
 const LEGS = trajeto.length; // 5 chegadas de ida (0..4) + retorno (n = 5)
+const BG_MAX_OPACITY = 0.5;
 
 // paradaAt(n): parada correspondente à chegada n do ciclo (n = 5 → Curitiba).
 const paradaAt = (n: number) => trajeto[n % trajeto.length];
+
+// Ângulo no circuito oval para a posição contínua f (0..5).
+// Começa à esquerda (180°) e circula: esquerda → baixo → direita → cima →
+// esquerda, fechando 360° ao fim das 5 pernas. (Tela tem y para baixo, então
+// sin > 0 é a metade de baixo do oval.)
+const angleFor = (f: number) => Math.PI - (f * 2 * Math.PI) / LEGS;
 
 // Locomotiva simplificada (vista lateral) — viaja junto com o cubo.
 function TrainGlyph() {
@@ -29,17 +36,18 @@ function TrainGlyph() {
   );
 }
 
-// HERO do site: um único cubo 3D viaja o trilho com o trem, parada a parada,
-// num ciclo de ida e volta (Curitiba → Morretes → Curitiba). Durante cada
-// perna, o fundo em tela cheia mostra a foto do destino; na chegada ela some
-// exatamente enquanto a face do cubo com a mesma foto gira para a frente —
-// a foto "pousa" no cubo, junto com as informações da parada.
+// HERO do site: um cubo 3D compacto viaja com o trem por um circuito oval
+// dourado — Curitiba (esquerda) desce por baixo do oval até Morretes e volta
+// por cima, fechando o ciclo. No centro do circuito ficam o nome da empresa
+// e o CTA. As faces do cubo carregam apenas as informações de cada parada;
+// a foto do trecho aparece no fundo, em tela cheia, com crossfade entre as
+// paradas (o destino vai surgindo conforme o trem viaja até ele).
 //
 // Tudo deriva de um único valor f = progress * 5 (posição contínua no ciclo):
-//   - posição x do cubo/trem no trilho (ida 0→4, volta 4→5 deslizando de volta)
+//   - posição (x, y) do cubo/trem sobre a elipse
 //   - rotação do cubo (-f * 90°; a cada chegada, face plana)
-//   - opacidade/zoom do fundo (sin(π·frac): zera nas chegadas, pico no meio)
-//   - estações acesas no trilho
+//   - crossfade das duas camadas de foto do fundo
+//   - estações acesas no circuito
 // As 4 faces do cubo são reutilizadas: quando a chegada n muda, a face que
 // está de perfil (invisível) recebe o conteúdo da próxima parada.
 //
@@ -48,10 +56,12 @@ function TrainGlyph() {
 export default function TrajetoInterativo() {
   const sectionRef = useRef<HTMLElement>(null);
   const areaRef = useRef<HTMLDivElement>(null);
-  const railRef = useRef<HTMLDivElement>(null);
   const travellerRef = useRef<HTMLDivElement>(null);
   const drumRef = useRef<HTMLDivElement>(null);
-  const bgRef = useRef<HTMLDivElement>(null);
+  const bgARef = useRef<HTMLDivElement>(null);
+  const bgBRef = useRef<HTMLDivElement>(null);
+  const ovalOuterRef = useRef<SVGEllipseElement>(null);
+  const ovalInnerRef = useRef<SVGEllipseElement>(null);
   const stRef = useRef<ScrollTrigger | null>(null);
   const lastNRef = useRef(0);
   const lastLegRef = useRef(-1);
@@ -65,11 +75,12 @@ export default function TrajetoInterativo() {
 
   useGsapContext(sectionRef, () => {
     const section = sectionRef.current;
-    const rail = railRef.current;
+    const area = areaRef.current;
     const traveller = travellerRef.current;
     const drum = drumRef.current;
-    const bg = bgRef.current;
-    if (!section || !rail || !traveller || !drum || !bg) return;
+    const bgA = bgARef.current;
+    const bgB = bgBRef.current;
+    if (!section || !area || !traveller || !drum || !bgA || !bgB) return;
 
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (reducedMotion) return;
@@ -77,21 +88,45 @@ export default function TrajetoInterativo() {
     section.classList.add(styles.pinned);
 
     const dots = gsap.utils.toArray<HTMLElement>(`.${styles.railStop}`, section);
+    const bgLayers = [bgA, bgB];
+    bgA.style.backgroundImage = `url(${paradaAt(0).imagens[0]})`;
+    bgB.style.backgroundImage = `url(${paradaAt(1).imagens[0]})`;
 
-    // Medidas lidas direto do layout (offsetLeft/offsetWidth) — nunca de
-    // strings de CSS, que já produziram NaN e travaram o transform num bug
-    // anterior desta seção.
-    const m = { railLeft: 0, railWidth: 0, travellerHalf: 0 };
+    // Geometria do circuito, lida direto do layout (offsetWidth/offsetHeight,
+    // nunca strings de CSS). Também desenha as elipses do trilho e posiciona
+    // as estações — tudo a partir das mesmas medidas, então nada desalinha.
+    const geo = { cx: 0, cy: 0, rx: 0, ry: 0, half: 0 };
     const measure = () => {
-      m.railLeft = rail.offsetLeft;
-      m.railWidth = rail.offsetWidth;
-      m.travellerHalf = traveller.offsetWidth / 2;
+      geo.half = traveller.offsetWidth / 2;
+      geo.cx = area.offsetWidth / 2;
+      geo.cy = area.offsetHeight / 2;
+      geo.rx = Math.max(60, geo.cx - geo.half - 8);
+      geo.ry = Math.max(48, geo.cy - geo.half - 8);
+
+      const outer = ovalOuterRef.current;
+      const inner = ovalInnerRef.current;
+      [outer, inner].forEach((el, i) => {
+        if (!el) return;
+        const inset = i * 7;
+        el.setAttribute('cx', String(geo.cx));
+        el.setAttribute('cy', String(geo.cy));
+        el.setAttribute('rx', String(geo.rx - inset));
+        el.setAttribute('ry', String(geo.ry - inset));
+      });
+
+      dots.forEach((dot, i) => {
+        const theta = angleFor(i);
+        dot.style.left = `${geo.cx + geo.rx * Math.cos(theta)}px`;
+        dot.style.top = `${geo.cy + geo.ry * Math.sin(theta)}px`;
+      });
     };
     measure();
 
     const setX = gsap.quickSetter(traveller, 'x', 'px');
-    const setBgOpacity = gsap.quickSetter(bg, 'opacity');
-    const setBgScale = gsap.quickSetter(bg, 'scale');
+    const setY = gsap.quickSetter(traveller, 'y', 'px');
+    const setOpacityA = gsap.quickSetter(bgA, 'opacity');
+    const setOpacityB = gsap.quickSetter(bgB, 'opacity');
+    const setBgOpacity = [setOpacityA, setOpacityB];
 
     stRef.current = ScrollTrigger.create({
       trigger: section,
@@ -104,25 +139,30 @@ export default function TrajetoInterativo() {
       onUpdate: (self) => {
         const f = self.progress * LEGS; // 0 → 5 (posição contínua no ciclo)
 
-        // Posição no trilho: ida linear (0→4); volta expressa (4→5 desliza
-        // de Morretes de volta até Curitiba).
-        const pos = f <= 4 ? f : 4 - (f - 4) * 4;
-        const x = m.railLeft + m.railWidth * (pos / 4) - m.travellerHalf;
-        if (Number.isFinite(x)) setX(x);
+        // Posição sobre o circuito oval (âncora = centro do cubo).
+        const theta = angleFor(f);
+        const x = geo.cx + geo.rx * Math.cos(theta) - geo.half;
+        const y = geo.cy + geo.ry * Math.sin(theta) - geo.half;
+        if (Number.isFinite(x) && Number.isFinite(y)) {
+          setX(x);
+          setY(y);
+        }
 
         // Cubo gira 90° por perna; a cada chegada, face plana de frente.
         drum.style.transform = `rotateY(${-f * 90}deg)`;
 
-        // Fundo = foto do destino da perna atual. Troca de foto só acontece
-        // na fronteira da perna, quando a opacidade está em zero.
+        // Crossfade do fundo: durante a perna L, a foto da parada L (camada
+        // L % 2) dá lugar à foto do destino L+1 (camada (L+1) % 2). As trocas
+        // de imagem acontecem sempre na camada que está com opacidade zero.
         const leg = Math.min(LEGS - 1, Math.floor(f));
         const frac = Math.min(1, Math.max(0, f - leg));
         if (leg !== lastLegRef.current) {
           lastLegRef.current = leg;
-          bg.style.backgroundImage = `url(${paradaAt(leg + 1).imagens[0]})`;
+          bgLayers[leg % 2].style.backgroundImage = `url(${paradaAt(leg).imagens[0]})`;
+          bgLayers[(leg + 1) % 2].style.backgroundImage = `url(${paradaAt(leg + 1).imagens[0]})`;
         }
-        setBgOpacity(Math.sin(Math.PI * frac) * 0.5);
-        setBgScale(1.15 - 0.15 * frac);
+        setBgOpacity[leg % 2]((1 - frac) * BG_MAX_OPACITY);
+        setBgOpacity[(leg + 1) % 2](frac * BG_MAX_OPACITY);
 
         // Estações acendem quando o trem passa; na volta, seguem acesas.
         dots.forEach((dot, i) => dot.classList.toggle(styles.reached, f >= i - 0.02));
@@ -170,30 +210,39 @@ export default function TrajetoInterativo() {
 
   return (
     <section ref={sectionRef} id="top" className={styles.section}>
-      {/* Fundo em tela cheia com a foto do destino da perna atual — 100%
-          gerenciado via refs (imagem, opacidade e zoom) para o React nunca
-          sobrescrever os estilos aplicados pelo GSAP. */}
-      <div ref={bgRef} className={styles.bgPhoto} aria-hidden />
+      {/* Fundo em tela cheia: duas camadas de foto em crossfade — imagens e
+          opacidades 100% gerenciadas via refs para o React nunca sobrescrever
+          os estilos aplicados pelo GSAP. */}
+      <div ref={bgARef} className={styles.bgPhoto} aria-hidden />
+      <div ref={bgBRef} className={styles.bgPhoto} aria-hidden />
       <div className={styles.bgOverlay} aria-hidden />
 
-      <div className={styles.intro}>
-        <p className={styles.eyebrow}>Curitiba → Morretes · ida e volta</p>
-        <h1 className={styles.heading}>O trem antes do trem começa aqui.</h1>
-      </div>
-
       <div ref={areaRef} className={styles.stageArea}>
-        <div ref={railRef} className={styles.railTrack}>
-          {trajeto.map((parada, index) => (
-            <button
-              key={parada.slug}
-              type="button"
-              data-cursor="hover"
-              className={styles.railStop}
-              style={{ left: `${(index / (trajeto.length - 1)) * 100}%` }}
-              onClick={() => goToArrival(index)}
-              aria-label={`Ir para ${parada.nome}`}
-            />
-          ))}
+        {/* Trilho oval dourado (desenhado via JS a partir das mesmas medidas
+            que posicionam o cubo e as estações). */}
+        <svg className={styles.ovalTrack} aria-hidden>
+          <ellipse ref={ovalOuterRef} className={styles.ovalRailOuter} />
+          <ellipse ref={ovalInnerRef} className={styles.ovalRailInner} />
+        </svg>
+
+        {trajeto.map((parada, index) => (
+          <button
+            key={parada.slug}
+            type="button"
+            data-cursor="hover"
+            className={styles.railStop}
+            onClick={() => goToArrival(index)}
+            aria-label={`Ir para ${parada.nome}`}
+          />
+        ))}
+
+        {/* Centro do circuito: nome da empresa + CTA. */}
+        <div className={styles.centerIntro}>
+          <p className={styles.eyebrow}>Curitiba → Morretes · ida e volta</p>
+          <h1 className={styles.heading}>Serra Verde Express</h1>
+          <a href={BOOKING_URL} data-cursor="hover" className={styles.heroCta}>
+            Reservar agora
+          </a>
         </div>
 
         {/* Cubo + trem viajam juntos: um único transform move os dois. */}
@@ -213,10 +262,7 @@ export default function TrajetoInterativo() {
                     <div
                       key={k}
                       className={styles.cubeFace}
-                      style={{
-                        transform: `rotateY(${k * 90}deg) translateZ(var(--cube-radius))`,
-                        backgroundImage: `linear-gradient(180deg, rgba(8, 20, 16, 0) 38%, rgba(8, 20, 16, 0.88) 100%), url(${parada.imagens[0]})`,
-                      }}
+                      style={{ transform: `rotateY(${k * 90}deg) translateZ(var(--cube-radius))` }}
                     >
                       <span className={styles.faceKm}>
                         Parada {String((arrival % trajeto.length) + 1).padStart(2, '0')} · km {parada.kmPercurso}
@@ -241,9 +287,17 @@ export default function TrajetoInterativo() {
         </div>
       </div>
 
-      <p className={styles.hint}>Role para viajar — Curitiba a Morretes, ida e volta.</p>
+      <p className={styles.hint}>Role para viajar o circuito — Curitiba a Morretes, ida e volta.</p>
 
-      {/* Fallback estático (sem JS / reduced-motion): cartões planos roláveis. */}
+      {/* Fallback estático (sem JS / reduced-motion): título simples +
+          cartões planos roláveis com foto e informações. */}
+      <div className={styles.fallbackIntro}>
+        <p className={styles.eyebrow}>Curitiba → Morretes · ida e volta</p>
+        <h1 className={styles.heading}>Serra Verde Express</h1>
+        <a href={BOOKING_URL} data-cursor="hover" className={styles.heroCta}>
+          Reservar agora
+        </a>
+      </div>
       <div className={styles.fallbackRow}>
         {trajeto.map((parada, index) => (
           <article key={parada.slug} id={`parada-${parada.slug}`} className={styles.fallbackCard}>
@@ -257,10 +311,6 @@ export default function TrajetoInterativo() {
           </article>
         ))}
       </div>
-
-      <a href={BOOKING_URL} data-cursor="hover" className={styles.floatingCta}>
-        Reservar agora
-      </a>
     </section>
   );
 }
