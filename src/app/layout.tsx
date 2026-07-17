@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Fraunces, Manrope } from 'next/font/google';
+import { Playfair_Display, Source_Sans_3 } from 'next/font/google';
 import SmoothScrollProvider from '@/lib/scroll/SmoothScrollProvider';
 import { AchievementsProvider } from '@/lib/achievements/AchievementsProvider';
 import Header from '@/components/layout/Header';
@@ -8,13 +8,16 @@ import CustomCursor from '@/components/ui/CustomCursor';
 import AchievementToast from '@/components/ui/AchievementToast';
 import './globals.scss';
 
-const display = Fraunces({
+// Serifada clássica com charme de cartaz de viagem retrô — assinatura visual
+// da marca nos títulos.
+const display = Playfair_Display({
   subsets: ['latin'],
-  weight: ['400', '500', '600'],
+  weight: ['500', '600', '700'],
   variable: '--font-display',
 });
 
-const sans = Manrope({
+// Sans limpa e bem legível (inclui acentuação em português) para o texto.
+const sans = Source_Sans_3({
   subsets: ['latin'],
   weight: ['400', '500', '600', '700'],
   variable: '--font-sans',
