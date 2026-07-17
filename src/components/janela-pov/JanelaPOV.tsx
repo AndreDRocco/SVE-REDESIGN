@@ -31,7 +31,20 @@ export default function JanelaPOV() {
   const audioRef = useRef<HTMLAudioElement>(null);
 
   useEffect(() => {
-    if (audioRef.current) audioRef.current.muted = muted;
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.muted = muted;
+    // O <audio> nunca tocava sozinho (faltava o play() — muted só controla o
+    // volume, não inicia a reprodução). Precisa do play() dentro do gesto do
+    // usuário (o clique no botão), senão o navegador bloqueia o autoplay.
+    if (!muted) {
+      audio.play().catch(() => {
+        // Autoplay bloqueado (raro, já que partiu de um clique) — o botão
+        // simplesmente continua mostrando "Ativar som ambiente".
+      });
+    } else {
+      audio.pause();
+    }
   }, [muted]);
 
   // Ao trocar do layout estático para o pinado, a altura da seção muda —
@@ -93,8 +106,15 @@ export default function JanelaPOV() {
           </button>
         </div>
 
-        {/* Sem asset de áudio ainda — trocar `src` pelo som ambiente real do trem. */}
-        <audio ref={audioRef} loop muted={muted} aria-hidden />
+        {/* Som ambiente de trem em movimento (Wikimedia Commons, licença livre)
+            — trocar pelo áudio oficial gravado a bordo quando existir.
+            preload="none": só baixa quando o usuário efetivamente ativa. */}
+        <audio ref={audioRef} loop muted={muted} preload="none" aria-hidden>
+          <source
+            src="https://upload.wikimedia.org/wikipedia/commons/a/a2/Sound_of_a_MoHa_201_series_electric_multiple_unit_train_on_the_Ch%C5%AB%C5%8D_Main_Line_%28Ochanomizu%E2%80%93Yotsuya%29%2C_Tokyo%2C_Japan_-_20101010.ogg"
+            type="audio/ogg"
+          />
+        </audio>
       </div>
     </section>
   );

@@ -17,6 +17,10 @@ const BOOKING_URL = 'https://serraverdeexpress.com.br/booking';
 const SCROLL_PER_LEG = 650;
 const LEGS = trajeto.length; // 5 chegadas de ida (0..4) + retorno (n = 5)
 const BG_MAX_OPACITY = 0.5;
+// Espaço entre a base do cubo e o topo do trem — precisa bater com o
+// margin-top de .badgeWrap no módulo de estilo (mesmo valor nos dois lados
+// para o cálculo da elipse ficar exato).
+const CUBE_TRAIN_GAP = 14;
 
 // paradaAt(n): parada correspondente à chegada n do ciclo (n = 5 → Curitiba).
 const paradaAt = (n: number) => trajeto[n % trajeto.length];
@@ -27,11 +31,19 @@ const paradaAt = (n: number) => trajeto[n % trajeto.length];
 // sin > 0 é a metade de baixo do oval.)
 const angleFor = (f: number) => Math.PI - (f * 2 * Math.PI) / LEGS;
 
-// Locomotiva simplificada (vista lateral) — viaja junto com o cubo.
+// Locomotiva (vista lateral, formas simples): cabine + chaminé na frente,
+// corpo longo, bico inclinado e três rodas — silhueta que não deixa dúvida
+// de que é um trem, não um carro.
 function TrainGlyph() {
   return (
-    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-      <path d="M5 4h9a5 5 0 0 1 5 5v6h1a1 1 0 1 1 0 2h-1.35a3.5 3.5 0 0 1-6.3 0h-2.7a3.5 3.5 0 0 1-6.3 0H3a1 1 0 0 1-1-1V6a2 2 0 0 1 2-2h1Zm1 3v4h5V7H6Zm8 0v4h3.9A3 3 0 0 0 14 7ZM6.5 19a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Zm9 0a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z" />
+    <svg viewBox="0 0 32 24" fill="currentColor" aria-hidden>
+      <rect x="7" y="0" width="4" height="4" rx="1" />
+      <rect x="3" y="3" width="10" height="9" rx="1.5" />
+      <rect x="3" y="10" width="26" height="8" rx="2" />
+      <path d="M29 12h1.5A1.5 1.5 0 0 1 32 13.5V17a1 1 0 0 1-1 1h-2v-6Z" />
+      <circle cx="9" cy="20" r="2.6" />
+      <circle cx="16" cy="20" r="2.6" />
+      <circle cx="23" cy="20" r="2.6" />
     </svg>
   );
 }
@@ -57,6 +69,8 @@ export default function TrajetoInterativo() {
   const sectionRef = useRef<HTMLElement>(null);
   const areaRef = useRef<HTMLDivElement>(null);
   const travellerRef = useRef<HTMLDivElement>(null);
+  const cubeViewportRef = useRef<HTMLDivElement>(null);
+  const trainBadgeRef = useRef<HTMLDivElement>(null);
   const drumRef = useRef<HTMLDivElement>(null);
   const bgARef = useRef<HTMLDivElement>(null);
   const bgBRef = useRef<HTMLDivElement>(null);
@@ -93,15 +107,27 @@ export default function TrajetoInterativo() {
     bgB.style.backgroundImage = `url(${paradaAt(1).imagens[0]})`;
 
     // Geometria do circuito, lida direto do layout (offsetWidth/offsetHeight,
-    // nunca strings de CSS). Também desenha as elipses do trilho e posiciona
-    // as estações — tudo a partir das mesmas medidas, então nada desalinha.
-    const geo = { cx: 0, cy: 0, rx: 0, ry: 0, half: 0 };
+    // nunca strings de CSS). O ponto que efetivamente anda sobre a elipse é o
+    // CENTRO DO TREM (não a caixa inteira do cubo+trem) — o cubo fica
+    // empilhado por cima dele, com espaço reservado no raio vertical para
+    // nunca cortar o topo do palco. Também desenha as elipses do trilho e
+    // posiciona as estações — tudo a partir das mesmas medidas.
+    const geo = { cx: 0, cy: 0, rx: 0, ry: 0, halfW: 0, stackTop: 0, trainHalfH: 0 };
     const measure = () => {
-      geo.half = traveller.offsetWidth / 2;
+      const cubeH = cubeViewportRef.current?.offsetHeight ?? 0;
+      const trainH = trainBadgeRef.current?.offsetHeight ?? 0;
+      geo.halfW = traveller.offsetWidth / 2;
+      geo.stackTop = cubeH + CUBE_TRAIN_GAP; // topo do traveller → topo do trem
+      geo.trainHalfH = trainH / 2;
+
       geo.cx = area.offsetWidth / 2;
-      geo.cy = area.offsetHeight / 2;
-      geo.rx = Math.max(60, geo.cx - geo.half - 8);
-      geo.ry = Math.max(48, geo.cy - geo.half - 8);
+      geo.rx = Math.max(60, geo.cx - geo.halfW - 8);
+
+      const H = area.offsetHeight;
+      const topClearance = geo.stackTop + geo.trainHalfH + 8;
+      const bottomClearance = geo.trainHalfH + 8;
+      geo.ry = Math.max(40, (H - topClearance - bottomClearance) / 2);
+      geo.cy = topClearance + geo.ry;
 
       const outer = ovalOuterRef.current;
       const inner = ovalInnerRef.current;
@@ -139,10 +165,14 @@ export default function TrajetoInterativo() {
       onUpdate: (self) => {
         const f = self.progress * LEGS; // 0 → 5 (posição contínua no ciclo)
 
-        // Posição sobre o circuito oval (âncora = centro do cubo).
+        // Posição sobre o circuito oval — a âncora é o CENTRO DO TREM; o
+        // cubo, empilhado acima dele, acompanha por consequência (é tudo o
+        // mesmo elemento .traveller, então nunca desalinha do trilho).
         const theta = angleFor(f);
-        const x = geo.cx + geo.rx * Math.cos(theta) - geo.half;
-        const y = geo.cy + geo.ry * Math.sin(theta) - geo.half;
+        const trainCenterX = geo.cx + geo.rx * Math.cos(theta);
+        const trainCenterY = geo.cy + geo.ry * Math.sin(theta);
+        const x = trainCenterX - geo.halfW;
+        const y = trainCenterY - geo.stackTop - geo.trainHalfH;
         if (Number.isFinite(x) && Number.isFinite(y)) {
           setX(x);
           setY(y);
@@ -254,7 +284,7 @@ export default function TrajetoInterativo() {
             onClick={nextStop}
             aria-label="Avançar para a próxima parada"
           >
-            <div className={styles.cubeViewport}>
+            <div ref={cubeViewportRef} className={styles.cubeViewport}>
               <div ref={drumRef} className={styles.cubeDrum}>
                 {faceMap.map((arrival, k) => {
                   const parada = paradaAt(arrival);
@@ -280,7 +310,7 @@ export default function TrajetoInterativo() {
             <span className={styles.smoke} />
             <span className={styles.smoke} />
             <span className={styles.smoke} />
-            <div className={styles.trainBadge}>
+            <div ref={trainBadgeRef} className={styles.trainBadge}>
               <TrainGlyph />
             </div>
           </div>

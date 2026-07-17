@@ -253,7 +253,7 @@
   border-radius: 14px;
   background: linear-gradient(160deg, rgba(22, 48, 31, 0.96) 0%, rgba(14, 31, 23, 0.96) 100%);
   box-shadow:
-    inset 0 0 0 1.5px rgba(212, 162, 76, 0.4),
+    inset 0 0 0 1.5px rgba(243, 239, 228, 0.14),
     0 14px 30px rgba(8, 20, 16, 0.45);
   backface-visibility: hidden;
   display: flex;
@@ -284,10 +284,12 @@
   line-height: 1.35;
 }
 
-// Trem logo abaixo do cubo (viajam juntos pelo circuito).
+// Trem logo abaixo do cubo (viajam juntos pelo circuito). O gap precisa
+// bater com CUBE_TRAIN_GAP no componente — é o valor que o cálculo da
+// elipse usa pra saber a distância exata entre o cubo e o centro do trem.
 .badgeWrap {
   position: relative;
-  margin-top: -14px;
+  margin-top: 14px;
   z-index: 2;
 }
 
