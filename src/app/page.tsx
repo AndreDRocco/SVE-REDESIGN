@@ -1,4 +1,3 @@
-import Hero from '@/components/hero/Hero';
 import TrajetoInterativo from '@/components/trajeto/TrajetoInterativo';
 import JanelaPOV from '@/components/janela-pov/JanelaPOV';
 import SeletorDeVagao from '@/components/vagoes/SeletorDeVagao';
@@ -9,7 +8,8 @@ import CTAFinal from '@/components/cta/CTAFinal';
 export default function HomePage() {
   return (
     <>
-      <Hero />
+      {/* O Trajeto Interativo É a hero: trem fixo no centro, cubos de fotos
+          reais girando e deslizando conforme o scroll. */}
       <TrajetoInterativo />
       <JanelaPOV />
       <SeletorDeVagao />

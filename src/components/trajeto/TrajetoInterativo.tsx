@@ -11,7 +11,12 @@ import styles from './TrajetoInterativo.module.scss';
 
 gsap.registerPlugin(ScrollTrigger);
 
-// Locomotiva simplificada (vista lateral) usada no marcador que percorre o trilho.
+const BOOKING_URL = 'https://serraverdeexpress.com.br/booking';
+// Distância de scroll dedicada a cada parada dentro do pin.
+const SCROLL_PER_STOP = 750;
+
+// Locomotiva simplificada (vista lateral) — fica fixa no centro da tela; é o
+// mundo (cubos de fotos + trilho) que desliza por baixo dela.
 function TrainGlyph() {
   return (
     <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden>
@@ -20,54 +25,85 @@ function TrainGlyph() {
   );
 }
 
-// Seção pinada: enquanto o usuário rola, o trem atravessa o trilho (sempre
-// visível) e os cards das paradas deslizam na horizontal em sincronia.
-// Sem JS ou com prefers-reduced-motion, vira uma faixa horizontal rolável.
+// HERO do site: seção pinada onde o trem fica parado no centro da tela e o
+// trilho + cubos 3D com fotos reais de cada parada deslizam por baixo dele
+// conforme o usuário rola. O cubo que cruza o centro gira revelando as fotos
+// daquele trecho (3 fotos + 1 face de informação, caixa fechada de 4 faces).
+// Sem JS ou com prefers-reduced-motion, vira uma faixa horizontal rolável
+// com os cubos parados na primeira foto.
 export default function TrajetoInterativo() {
   const sectionRef = useRef<HTMLElement>(null);
+  const areaRef = useRef<HTMLDivElement>(null);
   const rowRef = useRef<HTMLDivElement>(null);
-  const railFillRef = useRef<HTMLDivElement>(null);
-  const markerRef = useRef<HTMLDivElement>(null);
+  const drumRefs = useRef<(HTMLDivElement | null)[]>([]);
   const stRef = useRef<ScrollTrigger | null>(null);
   const activeRef = useRef(-1);
   const { unlock } = useAchievements();
 
   useGsapContext(sectionRef, () => {
     const section = sectionRef.current;
+    const area = areaRef.current;
     const row = rowRef.current;
-    if (!section || !row) return;
+    if (!section || !area || !row) return;
 
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (reducedMotion) return;
 
     section.classList.add(styles.pinned);
 
-    const stops = gsap.utils.toArray<HTMLElement>(`.${styles.stop}`, row);
+    const stages = gsap.utils.toArray<HTMLElement>(`.${styles.stage}`, row);
     const dots = gsap.utils.toArray<HTMLElement>(`.${styles.railStop}`, section);
-    const distance = () => Math.max(0, row.scrollWidth - row.offsetWidth);
+    const N = stages.length;
+    if (N === 0) return;
+
+    // Centros reais de cada cubo, lidos do layout (offsetLeft é relativo ao
+    // .row, que é position:relative) — nada de parsear strings de CSS, então
+    // não há como produzir NaN e travar o transform silenciosamente.
+    const centers: number[] = [];
+    let areaCenter = 0;
+    const measure = () => {
+      centers.length = 0;
+      stages.forEach((el) => centers.push(el.offsetLeft + el.offsetWidth / 2));
+      areaCenter = area.offsetWidth / 2;
+    };
+    measure();
+
+    const setX = gsap.quickSetter(row, 'x', 'px');
 
     stRef.current = ScrollTrigger.create({
       trigger: section,
       start: 'top top',
-      end: () => `+=${Math.max(900, distance() + window.innerHeight * 0.4)}`,
+      end: `+=${(N - 1) * SCROLL_PER_STOP}`,
       pin: true,
       scrub: 0.6,
       invalidateOnRefresh: true,
+      onRefresh: measure,
       onUpdate: (self) => {
-        const p = self.progress;
-        const pct = p * 100;
-        if (railFillRef.current) railFillRef.current.style.width = `${pct}%`;
-        if (markerRef.current) markerRef.current.style.left = `${pct}%`;
-        gsap.set(row, { x: -p * distance() });
+        // f = posição contínua do "foco" em unidades de parada (0 → N-1).
+        const f = self.progress * (N - 1);
+        const i0 = Math.min(N - 2, Math.max(0, Math.floor(f)));
+        const frac = Math.min(1, Math.max(0, f - i0));
+        const focusCenter = centers[i0] + (centers[i0 + 1] - centers[i0]) * frac;
+        const x = areaCenter - focusCenter;
+        if (Number.isFinite(x)) setX(x);
 
-        // Estações acendem quando o trem passa pela quilometragem delas.
-        dots.forEach((dot, i) => dot.classList.toggle(styles.reached, trajeto[i].kmPercurso <= pct + 1));
+        // Estações do trilho acendem conforme o foco as ultrapassa.
+        dots.forEach((dot, i) => dot.classList.toggle(styles.reached, f >= i - 0.05));
 
-        const active = Math.min(trajeto.length - 1, Math.round(p * (trajeto.length - 1)));
+        // O cubo gira uma volta completa (4 faces de 90°) enquanto atravessa a
+        // janela central; fora dela fica acomodado numa face plana.
+        stages.forEach((_, i) => {
+          const drum = drumRefs.current[i];
+          if (!drum) return;
+          const local = Math.min(1, Math.max(0, f - i + 0.5));
+          drum.style.transform = `rotateY(${-local * 360}deg)`;
+        });
+
+        const active = Math.round(f);
         if (active !== activeRef.current) {
           activeRef.current = active;
-          stops.forEach((el, i) => el.classList.toggle(styles.active, i === active));
-          if (active === trajeto.length - 1) unlock('explorador-da-serra');
+          stages.forEach((el, i) => el.classList.toggle(styles.active, i === active));
+          if (active === N - 1) unlock('explorador-da-serra');
         }
       },
     });
@@ -78,7 +114,7 @@ export default function TrajetoInterativo() {
     };
   });
 
-  // Clicar numa parada leva o scroll (e o trem) até o ponto correspondente.
+  // Clicar num cubo leva o scroll (e o trem) até a parada correspondente.
   const goToStop = useCallback((index: number) => {
     const st = stRef.current;
     if (!st) {
@@ -91,49 +127,91 @@ export default function TrajetoInterativo() {
   }, []);
 
   return (
-    <section ref={sectionRef} id="trajeto" className={styles.section}>
-      <h2 className={styles.heading}>Curitiba → Morretes, parada a parada</h2>
+    <section ref={sectionRef} id="top" className={styles.section}>
+      <div className={styles.intro}>
+        <p className={styles.eyebrow}>Curitiba → Morretes · parada a parada</p>
+        <h1 className={styles.heading}>O trem antes do trem começa aqui.</h1>
+      </div>
 
-      <div className={styles.railArea} aria-hidden>
-        <div className={styles.rail}>
-          <div ref={railFillRef} className={styles.railFill} />
+      <div ref={areaRef} className={styles.stageArea}>
+        <div className={styles.railTrack} aria-hidden>
           {trajeto.map((parada, index) => (
-            <button
+            <span
               key={parada.slug}
-              type="button"
-              tabIndex={-1}
-              data-cursor="hover"
               className={styles.railStop}
-              style={{ left: `${parada.kmPercurso}%` }}
-              onClick={() => goToStop(index)}
+              style={{ left: `${(index / (trajeto.length - 1)) * 100}%` }}
             />
           ))}
-          <div ref={markerRef} className={styles.trainMarker}>
-            <span className={styles.smoke} />
-            <span className={styles.smoke} />
-            <span className={styles.smoke} />
+        </div>
+
+        {/* Trem fixo no centro: é o marco visual que nunca se move — o mundo
+            desliza por baixo dele, dando a sensação de avanço contínuo. */}
+        <div className={styles.centerTrain} aria-hidden>
+          <span className={styles.smoke} />
+          <span className={styles.smoke} />
+          <span className={styles.smoke} />
+          <div className={styles.trainBadge}>
             <TrainGlyph />
           </div>
         </div>
-      </div>
 
-      <div ref={rowRef} className={styles.row}>
-        {trajeto.map((parada, index) => (
-          <div key={parada.slug} className={styles.stop} data-scrollytelling>
-            <button type="button" data-cursor="hover" className={styles.stopButton} onClick={() => goToStop(index)}>
+        <div ref={rowRef} className={styles.row}>
+          {trajeto.map((parada, index) => (
+            <div key={parada.slug} className={styles.stage} data-scrollytelling>
+              <button
+                type="button"
+                data-cursor="hover"
+                className={styles.cubeButton}
+                onClick={() => goToStop(index)}
+                aria-label={`Ir para ${parada.nome}`}
+              >
+                <div className={styles.cubeViewport}>
+                  <div
+                    ref={(el) => {
+                      drumRefs.current[index] = el;
+                    }}
+                    className={styles.cubeDrum}
+                  >
+                    {parada.imagens.slice(0, 3).map((img, faceIndex) => (
+                      <div
+                        key={img + faceIndex}
+                        className={styles.cubeFace}
+                        style={{
+                          transform: `rotateY(${faceIndex * 90}deg) translateZ(var(--cube-radius))`,
+                          backgroundImage: `url(${img})`,
+                        }}
+                      />
+                    ))}
+                    {/* 4ª face: cartão de informação — fecha a caixa 3D e dá
+                        respiro visual entre as fotos durante o giro. */}
+                    <div
+                      className={`${styles.cubeFace} ${styles.cubeFaceInfo}`}
+                      style={{ transform: 'rotateY(270deg) translateZ(var(--cube-radius))' }}
+                    >
+                      <span>km {parada.kmPercurso}</span>
+                      <strong>{parada.nome}</strong>
+                    </div>
+                  </div>
+                </div>
+              </button>
+
               <span className={styles.stopNumber}>
                 Parada {String(index + 1).padStart(2, '0')} · km {parada.kmPercurso}
               </span>
-              <h3 id={`parada-${parada.slug}`} className={styles.stopName}>
+              <h2 id={`parada-${parada.slug}`} className={styles.stopName}>
                 {parada.nome}
-              </h3>
+              </h2>
               <p className={styles.stopDesc}>{parada.descricaoCurta}</p>
-            </button>
-          </div>
-        ))}
+            </div>
+          ))}
+        </div>
       </div>
 
-      <p className={styles.hint}>Role para acompanhar o trem — ou clique numa estação para ir direto até ela.</p>
+      <p className={styles.hint}>Role para acompanhar o trem — ou clique num cubo para ir direto até ele.</p>
+
+      <a href={BOOKING_URL} data-cursor="hover" className={styles.floatingCta}>
+        Reservar agora
+      </a>
     </section>
   );
 }

@@ -5,7 +5,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { scrollToTarget } from '@/lib/scroll/lenis';
 
 const NAV_ITEMS = [
-  { label: 'Trajeto', href: '#trajeto' },
+  { label: 'Trajeto', href: '#top' },
   { label: 'Dentro do trem', href: '#dentro-do-trem' },
   { label: 'Vagões', href: '#vagoes' },
   { label: 'Pacotes', href: '#pacotes' },

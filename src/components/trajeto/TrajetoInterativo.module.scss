@@ -1,86 +1,118 @@
 @use '../../styles/mixins';
 
+// HERO do site. Encadeamento de cores: abre o site em --color-forest-deep e
+// termina em --color-moss-dark, exatamente onde a Janela POV começa.
 .section {
+  // Tamanho do cubo e altura da linha do trilho derivam do mesmo token para
+  // que trilho, trem e cubos fiquem sempre alinhados em qualquer viewport.
+  // (Declarado aqui no topo da seção porque custom properties só descem na
+  // cascata — o trilho e o trem também precisam ler esses valores.)
+  --cube-size: clamp(150px, 24vw, 230px);
+  --cube-radius: calc(var(--cube-size) / 2);
+  --rail-y: calc(0.5rem + var(--cube-size) / 2);
   position: relative;
-  // Encadeamento: começa em --color-forest (fim do hero) e termina em
-  // --color-moss-dark (início da janela POV).
-  background: linear-gradient(180deg, var(--color-forest) 0%, var(--color-moss-dark) 100%);
-  padding-block: clamp(4rem, 10vw, 8rem);
-  overflow: hidden;
-  @include mixins.section-padding;
-}
-
-// Modo pinado (JS + sem reduced-motion): a seção vira uma "tela" de altura
-// fixa em que o trilho fica sempre visível enquanto os cards deslizam.
-.pinned {
-  height: 100svh;
-  min-height: 560px;
-  padding-block: 0;
-  padding-top: calc(var(--header-height) + 1rem);
+  min-height: 100svh;
+  background: linear-gradient(180deg, var(--color-forest-deep) 0%, var(--color-forest) 45%, var(--color-moss-dark) 100%);
+  padding-block: clamp(4rem, 8vh, 6rem);
+  padding-top: calc(var(--header-height) + 1.5rem);
   display: flex;
   flex-direction: column;
   justify-content: center;
   gap: clamp(1.25rem, 3.5vh, 2.5rem);
+  overflow: hidden;
+  @include mixins.section-padding;
+}
 
-  .heading {
-    margin-bottom: 0;
-  }
+// Modo pinado (JS + sem reduced-motion): altura travada na viewport; o trem e
+// o trilho fixos aparecem e o mundo desliza por baixo.
+.pinned {
+  height: 100svh;
+  min-height: 620px;
 
   .row {
     overflow: visible;
+    padding-inline: 0;
   }
+
+  .railTrack,
+  .centerTrain {
+    display: flex;
+  }
+}
+
+// ── Título (entrada em CSS puro: nunca depende de JS para aparecer) ────────
+.intro {
+  text-align: center;
+  animation: introIn 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.eyebrow {
+  font-size: 0.8rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--color-sunset-light);
 }
 
 .heading {
   @include mixins.display-heading;
-  font-size: clamp(2rem, 5vw, 3.5rem);
-  max-width: 24ch;
-  margin-bottom: clamp(2rem, 6vw, 4rem);
+  font-size: clamp(2.2rem, 5.5vw, 4.5rem);
+  max-width: 22ch;
+  margin-inline: auto;
+  margin-top: 0.5rem;
   color: var(--color-mist);
+  text-shadow: 0 2px 24px rgba(8, 20, 16, 0.5);
 }
 
-// ── Trilho ferroviário horizontal ──────────────────────────────────────────
-// Dois trilhos + dormentes desenhados só com gradientes.
-.railArea {
+@keyframes introIn {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .intro {
+    animation: none;
+  }
+}
+
+// ── Área central: trilho fixo + trem fixo + fileira de cubos ───────────────
+.stageArea {
   position: relative;
-  height: 72px;
-  flex-shrink: 0;
+  animation: introIn 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both;
 }
 
-.rail {
+@media (prefers-reduced-motion: reduce) {
+  .stageArea {
+    animation: none;
+  }
+}
+
+// Linha do trilho: atravessa a tela na altura do centro dos cubos.
+.railTrack {
+  display: none;
   position: absolute;
   left: 0;
   right: 0;
-  top: 50%;
-  height: 26px;
+  top: var(--rail-y);
+  height: 20px;
   transform: translateY(-50%);
+  z-index: 1;
   background:
-    // dois trilhos horizontais
-    linear-gradient(180deg, transparent 5px, rgba(243, 239, 228, 0.22) 5px 8px, transparent 8px 18px, rgba(243, 239, 228, 0.22) 18px 21px, transparent 21px),
-    // dormentes
-    repeating-linear-gradient(90deg, rgba(243, 239, 228, 0.14) 0 4px, transparent 4px 18px);
+    linear-gradient(180deg, transparent 4px, rgba(243, 239, 228, 0.2) 4px 7px, transparent 7px 14px, rgba(243, 239, 228, 0.2) 14px 17px, transparent 17px),
+    repeating-linear-gradient(90deg, rgba(243, 239, 228, 0.12) 0 3px, transparent 3px 14px);
 }
 
-// Preenchimento dourado que "constrói" o trilho conforme o trem avança.
-.railFill {
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 0%;
-  overflow: hidden;
-  background:
-    linear-gradient(180deg, transparent 5px, var(--color-gold) 5px 8px, transparent 8px 18px, var(--color-gold) 18px 21px, transparent 21px),
-    repeating-linear-gradient(90deg, rgba(212, 162, 76, 0.55) 0 4px, transparent 4px 18px);
-  filter: drop-shadow(0 0 6px rgba(212, 162, 76, 0.45));
-}
-
-// Estações marcadas no trilho na quilometragem real do percurso.
 .railStop {
   position: absolute;
   top: 50%;
   transform: translate(-50%, -50%);
-  z-index: 2;
-  width: 18px;
-  height: 18px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
   border: 2px solid var(--color-mist-dim);
   background: var(--color-forest);
@@ -90,61 +122,68 @@
     border-color: var(--color-gold);
     background: var(--color-gold);
     box-shadow:
-      0 0 0 6px rgba(212, 162, 76, 0.18),
-      0 0 20px rgba(212, 162, 76, 0.5);
+      0 0 0 5px rgba(212, 162, 76, 0.18),
+      0 0 16px rgba(212, 162, 76, 0.5);
   }
 }
 
-// ── Marcador-trem que atravessa o trilho ───────────────────────────────────
-.trainMarker {
+// Trem fixo no centro, montado sobre a linha do trilho.
+.centerTrain {
+  display: none;
   position: absolute;
-  left: 0%;
-  top: 50%;
+  left: 50%;
+  top: var(--rail-y);
   transform: translate(-50%, -50%);
-  z-index: 3;
-  width: 52px;
-  height: 52px;
+  z-index: 6;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.trainBadge {
+  position: relative;
+  z-index: 2;
+  width: 58px;
+  height: 58px;
   display: grid;
   place-items: center;
   border-radius: 50%;
   background: var(--color-gold);
   color: var(--color-forest-deep);
   box-shadow:
-    0 0 0 4px rgba(212, 162, 76, 0.25),
-    0 6px 18px rgba(8, 20, 16, 0.45);
+    0 0 0 5px rgba(212, 162, 76, 0.22),
+    0 8px 22px rgba(8, 20, 16, 0.5);
 
   svg {
-    width: 30px;
-    height: 30px;
+    width: 32px;
+    height: 32px;
     animation: rock 1.6s ease-in-out infinite;
   }
 
-  // Escondido quando o usuário pediu menos movimento — as estações continuam
-  // acendendo normalmente, só o elemento móvel some.
-  :global(.no-motion) & {
-    display: none;
+  :global(.no-motion) & svg {
+    animation: none;
   }
 }
 
 .smoke {
   position: absolute;
-  top: -4px;
-  left: 30%;
-  width: 8px;
-  height: 8px;
+  top: 4px;
+  right: -8px;
+  width: 9px;
+  height: 9px;
   border-radius: 50%;
-  background: rgba(243, 239, 228, 0.5);
+  background: rgba(243, 239, 228, 0.55);
   animation: puff 2.2s ease-out infinite;
 
   &:nth-child(2) {
     animation-delay: 0.7s;
-    width: 6px;
-    height: 6px;
+    width: 7px;
+    height: 7px;
   }
   &:nth-child(3) {
     animation-delay: 1.4s;
-    width: 5px;
-    height: 5px;
+    width: 6px;
+    height: 6px;
   }
 }
 
@@ -165,69 +204,115 @@
   }
   100% {
     opacity: 0;
-    transform: translate(-22px, -26px) scale(1.8);
+    transform: translate(30px, -14px) scale(1.8);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .trainMarker svg,
+  .trainBadge svg,
   .smoke {
     animation: none;
   }
 }
 
-// ── Cards das paradas (faixa horizontal) ───────────────────────────────────
+// ── Fileira de paradas (cubo 3D + texto) ────────────────────────────────────
 .row {
+  position: relative;
+  z-index: 2;
   display: flex;
-  gap: clamp(1rem, 2.5vw, 1.75rem);
+  align-items: flex-start;
+  gap: clamp(2.5rem, 6vw, 5rem);
+  // O padding-top de 0.5rem entra no cálculo de --rail-y (seção) para a linha
+  // do trilho cruzar exatamente o meio vertical dos cubos.
+  padding: 0.5rem clamp(1rem, 4vw, 3rem) 1rem;
   will-change: transform;
   // Fallback sem JS / reduced-motion: a faixa rola no dedo ou trackpad.
   overflow-x: auto;
   scroll-snap-type: x proximity;
-  padding-bottom: 0.5rem;
   scrollbar-width: thin;
   scrollbar-color: rgba(243, 239, 228, 0.25) transparent;
 }
 
-.stop {
+.stage {
   flex: 0 0 auto;
-  width: min(76vw, 380px);
+  width: max(var(--cube-size), 230px);
   scroll-snap-align: center;
-  border: 1px solid rgba(243, 239, 228, 0.12);
-  border-radius: 16px;
-  background: rgba(243, 239, 228, 0.05);
-  backdrop-filter: blur(2px);
-  opacity: 0.45;
-  transform: translateY(14px) scale(0.98);
-  transition:
-    opacity 0.6s var(--ease-trilho),
-    transform 0.6s var(--ease-trilho),
-    border-color 0.6s var(--ease-trilho);
+  text-align: center;
+  opacity: 0.55;
+  transition: opacity 0.5s var(--ease-trilho);
 
   &.active {
     opacity: 1;
-    transform: translateY(0) scale(1);
-    border-color: rgba(212, 162, 76, 0.55);
-    background: rgba(243, 239, 228, 0.08);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .stop {
+  .stage {
     opacity: 1;
-    transform: none;
   }
 }
 
-.stopButton {
+.cubeButton {
   display: block;
+  margin-inline: auto;
+}
+
+.cubeViewport {
+  width: var(--cube-size);
+  height: var(--cube-size);
+  margin-inline: auto;
+  perspective: 1100px;
+}
+
+.cubeDrum {
+  position: relative;
   width: 100%;
   height: 100%;
-  text-align: left;
-  padding: clamp(1.1rem, 2.5vw, 1.6rem);
+  transform-style: preserve-3d;
+  transform: rotateY(0deg);
+}
+
+.cubeFace {
+  position: absolute;
+  inset: 0;
+  border-radius: 14px;
+  background-size: cover;
+  background-position: center;
+  background-color: var(--color-moss-dark);
+  box-shadow:
+    inset 0 0 0 2px rgba(243, 239, 228, 0.15),
+    0 14px 30px rgba(8, 20, 16, 0.4);
+  backface-visibility: hidden;
+}
+
+// 4ª face do cubo: cartão de informação (fecha a caixa e respira entre fotos).
+.cubeFaceInfo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  background: linear-gradient(160deg, var(--color-forest) 0%, var(--color-moss-dark) 100%);
+  color: var(--color-mist);
+  padding: 1rem;
+
+  span {
+    font-size: 0.7rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--color-sunset-light);
+  }
+
+  strong {
+    @include mixins.display-heading;
+    font-size: clamp(1rem, 2vw, 1.35rem);
+    line-height: 1.2;
+  }
 }
 
 .stopNumber {
+  display: block;
+  margin-top: 1.25rem;
   font-size: 0.7rem;
   letter-spacing: 0.25em;
   color: var(--color-sunset-light);
@@ -237,21 +322,56 @@
 .stopName {
   @include mixins.display-heading;
   margin-top: 0.4rem;
-  font-size: clamp(1.35rem, 2.6vw, 1.9rem);
+  font-size: clamp(1.1rem, 2vw, 1.4rem);
   color: var(--color-mist);
 }
 
 .stopDesc {
-  margin-top: 0.5rem;
-  max-width: 48ch;
+  margin-top: 0.4rem;
+  margin-inline: auto;
+  max-width: 30ch;
   color: var(--color-mist-dim);
-  font-size: 0.95rem;
+  font-size: 0.85rem;
+  line-height: 1.4;
 }
 
 .hint {
+  text-align: center;
   font-size: 0.75rem;
   letter-spacing: 0.15em;
   text-transform: uppercase;
   color: var(--color-mist-dim);
   opacity: 0.7;
+  animation: introIn 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.45s both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hint {
+    animation: none;
+  }
+}
+
+// ── CTA ─────────────────────────────────────────────────────────────────────
+// Ancorado no canto inferior direito da hero — visível a viagem inteira, sem
+// disputar o centro da tela com o trem e os cubos.
+.floatingCta {
+  display: inline-flex;
+  position: absolute;
+  right: clamp(1.25rem, 4vw, 2.5rem);
+  bottom: clamp(1.25rem, 4vw, 2.5rem);
+  z-index: 7;
+  border-radius: 999px;
+  background: var(--color-sunset);
+  color: var(--color-forest-deep);
+  font-weight: 700;
+  font-size: 0.9rem;
+  padding: 0.75rem 1.5rem;
+  min-height: 44px;
+  align-items: center;
+  box-shadow: 0 10px 24px rgba(8, 20, 16, 0.35);
+  transition: transform 0.3s var(--ease-trilho);
+
+  &:hover {
+    transform: scale(1.05);
+  }
 }

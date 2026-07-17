@@ -7,6 +7,9 @@ export interface Parada {
   nome: string;
   descricaoCurta: string;
   kmPercurso: number; // posição aproximada no trajeto, 0-100
+  // 3-4 fotos reais do trecho, usadas nas faces do cubo giratório da seção
+  // Trajeto — URLs absolutas publicadas em serraverdeexpress.com.br.
+  imagens: string[];
 }
 
 export type CategoriaVagao =
