@@ -188,18 +188,20 @@ export default function TrajetoInterativo() {
           setY(y);
         }
 
-        // Cubo gira 90° por perna no eixo Y (como um carrossel) e AINDA
-        // tomba no eixo X entre uma parada e outra — como um dado rolando no
-        // espaço, não só girando plano. O sinal é negativo de propósito: com
-        // essa geometria (tampa de cima em rotateX(90deg)), um tombo NEGATIVO
-        // é o que inclina a face de CIMA em direção à câmera (testado via
-        // matriz de rotação) — é ela que fica legível durante o tombo. O
-        // ângulo (55°) é grande o bastante pra realmente dar pra ler o texto
-        // da tampa, não só uma tampa de perfil. Volta a 0° exatamente na
-        // chegada de cada parada, então a face frontal sempre fica reta e
-        // legível quando o trem para.
-        const legProgress = f - Math.floor(f);
-        const tumbleX = -Math.sin(legProgress * Math.PI) * 55;
+        // Cubo gira 90° por perna no eixo Y (como um carrossel, sempre) e só
+        // tomba no eixo X numa janela ESTREITA bem colada em cada chegada —
+        // não mais espalhado pelo trajeto inteiro. Durante a maior parte da
+        // viagem entre paradas o cubo fica achatado (tumbleX = 0), fácil de
+        // ler; o tombo só nasce perto da estação e desaparece de novo assim
+        // que ela passa — a face de cima (com a prévia do destino) só
+        // aparece "no final", exatamente quando o trem tá chegando.
+        // O sinal negativo inclina a face de CIMA em direção à câmera
+        // (testado via matriz de rotação — positivo revelaria a de baixo).
+        const distFromArrival = Math.abs(f - Math.round(f));
+        const TUMBLE_WINDOW = 0.15; // fração da perna, pra cada lado da chegada
+        const tumbleRaw = Math.max(0, 1 - distFromArrival / TUMBLE_WINDOW);
+        const tumbleEase = tumbleRaw * tumbleRaw * (3 - 2 * tumbleRaw); // smoothstep, sem quina
+        const tumbleX = -tumbleEase * 55;
         drum.style.transform = `rotateX(${tumbleX}deg) rotateY(${-f * 90}deg)`;
 
         // Crossfade do fundo: durante a perna L, a foto da parada L (camada

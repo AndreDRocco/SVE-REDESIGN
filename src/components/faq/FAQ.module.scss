@@ -12,12 +12,16 @@
 .heading {
   @include mixins.display-heading;
   font-size: clamp(2rem, 5vw, 3.5rem);
+  max-width: 48rem;
+  margin-inline: auto;
   margin-bottom: clamp(2rem, 6vw, 4rem);
   color: var(--color-forest-deep);
+  text-align: center;
 }
 
 .list {
   max-width: 48rem;
+  margin-inline: auto;
   display: grid;
   gap: 0.75rem;
 }
