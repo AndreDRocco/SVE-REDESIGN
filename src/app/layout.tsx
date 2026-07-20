@@ -6,6 +6,8 @@ import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import CustomCursor from '@/components/ui/CustomCursor';
 import AchievementToast from '@/components/ui/AchievementToast';
+import BrandParticles from '@/components/ui/BrandParticles';
+import WhatsAppButton from '@/components/ui/WhatsAppButton';
 import './globals.scss';
 
 // Serifada clássica com charme de cartaz de viagem retrô — assinatura visual
@@ -35,11 +37,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="font-sans">
         <AchievementsProvider>
           <SmoothScrollProvider>
+            <BrandParticles />
             <CustomCursor />
             <Header />
             <main>{children}</main>
             <Footer />
             <AchievementToast />
+            <WhatsAppButton />
           </SmoothScrollProvider>
         </AchievementsProvider>
       </body>

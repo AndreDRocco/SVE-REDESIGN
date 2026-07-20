@@ -70,8 +70,9 @@ export default function JanelaPOV() {
   }, [muted]);
 
   useGsapContext(sectionRef, () => {
+    const section = sectionRef.current;
     const viewport = viewportRef.current;
-    if (!viewport) return;
+    if (!section || !viewport) return;
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (reducedMotion) return;
 
@@ -82,6 +83,12 @@ export default function JanelaPOV() {
     // janela, o pin calcula a posição/altura erradas e a rolagem trava no
     // meio do caminho (era exatamente esse o bug relatado: scroll não
     // avançava e só metade das cenas ficava visível).
+    // A classe .pinned na seção trava a altura em 100svh e faz a moldura
+    // ocupar só o espaço que sobra (flex) — sem isso, título + preenchimento
+    // + moldura de 70vh somados passavam de 100vh, e a fatia que excedia a
+    // tela ficava presa fora de vista pro resto da duração do pin (era o
+    // "carrossel avança mas não dá pra ver ele por inteiro" relatado).
+    section.classList.add(styles.pinned);
     viewport.classList.remove(styles.scenesStatic);
     viewport.classList.add(styles.pinnedMode);
 
@@ -101,6 +108,10 @@ export default function JanelaPOV() {
         });
       },
     });
+
+    return () => {
+      section.classList.remove(styles.pinned);
+    };
   });
 
   return (

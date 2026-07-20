@@ -87,6 +87,9 @@ export default function TrajetoInterativo() {
   // A face k fica de frente quando n % 4 === k, então a troca de conteúdo
   // acontece sempre com a face escondida/de perfil — sem "pulo" visual.
   const [faceMap, setFaceMap] = useState<number[]>([0, 1, 2, 3]);
+  // Conteúdo da tampa de cima do cubo: prévia do destino da perna atual —
+  // revelada quando o cubo tomba (mesmo destino que já aparece no fundo).
+  const [topCapArrival, setTopCapArrival] = useState(1);
 
   useGsapContext(sectionRef, () => {
     const section = sectionRef.current;
@@ -186,14 +189,17 @@ export default function TrajetoInterativo() {
         }
 
         // Cubo gira 90° por perna no eixo Y (como um carrossel) e AINDA
-        // tomba no eixo X entre uma parada e outra (como um dado rolando no
-        // espaço, não só girando num carrossel plano) — a referência do
-        // usuário faz esse tombo diagonal. O tombo em X é uma onda que sai
-        // de 0°, sobe até ~22° no meio do trajeto entre paradas e volta a
-        // 0° exatamente na chegada — assim o texto sempre fica reto e
-        // legível quando o trem para, e o tombo só aparece em trânsito.
+        // tomba no eixo X entre uma parada e outra — como um dado rolando no
+        // espaço, não só girando plano. O sinal é negativo de propósito: com
+        // essa geometria (tampa de cima em rotateX(90deg)), um tombo NEGATIVO
+        // é o que inclina a face de CIMA em direção à câmera (testado via
+        // matriz de rotação) — é ela que fica legível durante o tombo. O
+        // ângulo (55°) é grande o bastante pra realmente dar pra ler o texto
+        // da tampa, não só uma tampa de perfil. Volta a 0° exatamente na
+        // chegada de cada parada, então a face frontal sempre fica reta e
+        // legível quando o trem para.
         const legProgress = f - Math.floor(f);
-        const tumbleX = Math.sin(legProgress * Math.PI) * 22;
+        const tumbleX = -Math.sin(legProgress * Math.PI) * 55;
         drum.style.transform = `rotateX(${tumbleX}deg) rotateY(${-f * 90}deg)`;
 
         // Crossfade do fundo: durante a perna L, a foto da parada L (camada
@@ -205,6 +211,9 @@ export default function TrajetoInterativo() {
           lastLegRef.current = leg;
           bgLayers[leg % 2].style.backgroundImage = `url(${paradaAt(leg).imagens[0]})`;
           bgLayers[(leg + 1) % 2].style.backgroundImage = `url(${paradaAt(leg + 1).imagens[0]})`;
+          // A tampa de cima do cubo mostra a prévia do destino da perna —
+          // o mesmo destino que já está surgindo no fundo em tela cheia.
+          setTopCapArrival(leg + 1);
         }
         setBgOpacity[leg % 2]((1 - frac) * BG_MAX_OPACITY);
         setBgOpacity[(leg + 1) % 2](frac * BG_MAX_OPACITY);
@@ -347,17 +356,21 @@ export default function TrajetoInterativo() {
                   );
                 })}
 
-                {/* Tampas de cima/baixo: fecham o cubo num sólido de 6 faces
-                    de verdade (mesma técnica da referência) — sem elas, no
-                    meio do giro dá pra ver o "vão vazio" por dentro, o que
-                    quebra a sensação de objeto 3D sólido. Nunca ficam de
-                    frente pra câmera (o giro é só no eixo Y), então não
-                    precisam de conteúdo, só fecham a caixa. */}
+                {/* Tampa de cima: fecha o cubo num sólido de 6 faces de
+                    verdade (sem ela, no meio do giro dava pra ver o "vão
+                    vazio" por dentro) E carrega conteúdo de verdade — é ela
+                    que aparece legível quando o cubo tomba pra frente,
+                    mostrando uma prévia do próximo destino. */}
                 <div
-                  aria-hidden
                   className={`${styles.cubeFace} ${styles.cubeCap}`}
                   style={{ transform: `rotateX(90deg) translateZ(var(--cube-radius))` }}
-                />
+                >
+                  <span className={styles.faceKm}>Próxima parada · km {paradaAt(topCapArrival).kmPercurso}</span>
+                  <strong className={styles.faceName}>{paradaAt(topCapArrival).nome}</strong>
+                  <p className={styles.faceDesc}>{paradaAt(topCapArrival).descricaoCurta}</p>
+                </div>
+                {/* Tampa de baixo: só fecha a caixa, nunca fica visível (o
+                    tombo inclina pra cima, não pra baixo). */}
                 <div
                   aria-hidden
                   className={`${styles.cubeFace} ${styles.cubeCap}`}

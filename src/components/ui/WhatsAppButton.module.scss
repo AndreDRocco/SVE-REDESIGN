@@ -1,0 +1,58 @@
+// Verde oficial do WhatsApp — mantido de propósito fora da paleta do site,
+// é uma cor de marca reconhecível (mesma lógica de manter o ícone do
+// Instagram/Twitter na cor original deles).
+$whatsapp-green: #25d366;
+
+.button {
+  position: fixed;
+  right: clamp(1rem, 4vw, 1.75rem);
+  bottom: clamp(1rem, 4vw, 1.75rem);
+  z-index: 45;
+  width: 56px;
+  height: 56px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: $whatsapp-green;
+  color: #fff;
+  box-shadow: 0 8px 24px rgba(8, 20, 16, 0.4);
+  transition: transform 0.25s var(--ease-trilho);
+
+  svg {
+    width: 28px;
+    height: 28px;
+    position: relative;
+    z-index: 1;
+  }
+
+  &:hover {
+    transform: scale(1.08);
+  }
+}
+
+// Anel que se expande e desaparece — o "aviso" de movimento pedido.
+.ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid $whatsapp-green;
+  animation: ringPulse 2s ease-out infinite;
+}
+
+@keyframes ringPulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(1.7);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ring {
+    animation: none;
+    display: none;
+  }
+}
