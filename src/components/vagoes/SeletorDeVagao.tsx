@@ -25,7 +25,7 @@ export default function SeletorDeVagao() {
       <fieldset className={styles.grid}>
         <legend className={styles.srOnly}>Escolha o vagão da sua viagem</legend>
         {vagoes.map((vagao) => (
-          <div key={vagao.categoria}>
+          <div key={vagao.categoria} className={styles.gridItem}>
             <input
               type="radio"
               id={`vagao-${vagao.categoria}`}

@@ -40,6 +40,14 @@
   }
 }
 
+// min-width:0 — sem isso, o grid item usa o tamanho mínimo do CONTEÚDO (a
+// imagem, que tem width/height como atributo HTML) como piso da coluna, e
+// a coluna pode crescer além do viewport no mobile mesmo com
+// grid-template-columns definido.
+.gridItem {
+  min-width: 0;
+}
+
 .srOnly {
   position: absolute;
   width: 1px;
