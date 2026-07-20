@@ -206,6 +206,14 @@
   perspective: 400px;
 }
 
+// Agrupa as letras de cada palavra pra elas nunca quebrarem linha entre si —
+// sem isso, o navegador trata cada letra como uma caixa independente e pode
+// isolar a última letra de "Express" numa linha à parte.
+.headingWord {
+  display: inline-block;
+  white-space: nowrap;
+}
+
 // Cada letra entra com um leve atraso em relação à anterior (efeito de
 // "SplitText" via CSS puro) e reage individualmente ao hover.
 .headingChar {

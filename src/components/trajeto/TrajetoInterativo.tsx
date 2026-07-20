@@ -185,8 +185,16 @@ export default function TrajetoInterativo() {
           setY(y);
         }
 
-        // Cubo gira 90° por perna; a cada chegada, face plana de frente.
-        drum.style.transform = `rotateY(${-f * 90}deg)`;
+        // Cubo gira 90° por perna no eixo Y (como um carrossel) e AINDA
+        // tomba no eixo X entre uma parada e outra (como um dado rolando no
+        // espaço, não só girando num carrossel plano) — a referência do
+        // usuário faz esse tombo diagonal. O tombo em X é uma onda que sai
+        // de 0°, sobe até ~22° no meio do trajeto entre paradas e volta a
+        // 0° exatamente na chegada — assim o texto sempre fica reto e
+        // legível quando o trem para, e o tombo só aparece em trânsito.
+        const legProgress = f - Math.floor(f);
+        const tumbleX = Math.sin(legProgress * Math.PI) * 22;
+        drum.style.transform = `rotateX(${tumbleX}deg) rotateY(${-f * 90}deg)`;
 
         // Crossfade do fundo: durante a perna L, a foto da parada L (camada
         // L % 2) dá lugar à foto do destino L+1 (camada (L+1) % 2). As trocas
@@ -282,15 +290,28 @@ export default function TrajetoInterativo() {
           <p className={styles.eyebrow}>Curitiba → Morretes · ida e volta</p>
           <h1 className={styles.heading} aria-label={COMPANY_NAME}>
             <span aria-hidden="true">
-              {COMPANY_NAME.split('').map((char, i) => (
-                <span
-                  key={i}
-                  className={styles.headingChar}
-                  style={{ animationDelay: `${0.3 + i * 0.035}s` }}
-                >
-                  {char === ' ' ? ' ' : char}
-                </span>
-              ))}
+              {(() => {
+                const words = COMPANY_NAME.split(' ');
+                let i = 0;
+                return words.map((word, w) => (
+                  // Cada palavra num span à parte, com white-space: nowrap —
+                  // as letras não podem quebrar linha no meio de uma palavra
+                  // (senão a última letra de "Express" fica isolada embaixo,
+                  // como aconteceu quando tudo era uma fileira só de spans).
+                  <span key={word} className={styles.headingWord}>
+                    {word.split('').map((char) => {
+                      const delay = 0.3 + i * 0.035;
+                      i += 1;
+                      return (
+                        <span key={char + i} className={styles.headingChar} style={{ animationDelay: `${delay}s` }}>
+                          {char}
+                        </span>
+                      );
+                    })}
+                    {w < words.length - 1 ? ' ' : ''}
+                  </span>
+                ));
+              })()}
             </span>
           </h1>
           <a href={BOOKING_URL} data-cursor="hover" className={styles.heroCta}>
